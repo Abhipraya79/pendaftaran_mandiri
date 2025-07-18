@@ -40,3 +40,152 @@
 .read-the-docs {
   color: #888;
 }
+/* src/App.css */
+
+body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100vw;
+}
+
+.pendaftaran-bg {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #e0e7ff 40%, #f0f4f8 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.pendaftaran-logo {
+  width: 90px;
+  height: 90px;
+  margin-bottom: 24px;
+  object-fit: contain;
+}
+
+.pendaftaran-title {
+  font-weight: 800;
+  font-size: 2.5rem;
+  color: #1a2433;
+  margin: 0;
+  text-align: center;
+  line-height: 1.18;
+}
+
+.pendaftaran-instruksi {
+  margin: 2rem 0 2.5rem 0;
+  font-size: 1.2rem;
+  color: #26324A;
+  text-align: center;
+}
+
+.pendaftaran-pilihan-wrapper {
+  display: flex;
+  gap: 2.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 950px;
+}
+
+.pendaftaran-back-btn {
+  background: #e0e0e0;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 28px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 18px;
+}
+
+.pendaftaran-subtitle {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.pendaftaran-input {
+  width: 90vw;
+  max-width: 410px;
+  padding: 1.05rem;
+  font-size: 1.17rem;
+  border-radius: 12px;
+  border: 1.5px solid #b5b9c5;
+  margin-bottom: 1.7rem;
+  outline: none;
+}
+
+.pilihan-card {
+  flex: 1;
+  min-width: 260px;
+  max-width: 420px;
+  background: #e4e4e4;
+  border-radius: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: 500;
+  box-shadow: 0 4px 16px #0002;
+  transition: transform 0.13s, box-shadow 0.18s, border 0.18s;
+  text-align: center;
+  user-select: none;
+  border: 3px solid transparent;
+}
+
+.pilihan-card:active {
+  transform: scale(0.96);
+}
+.pilihan-card:hover {
+  border: 3px solid #6c8ffe;
+}
+
+@media (max-width: 600px) {
+  .pendaftaran-title {
+    font-size: 1.3rem;
+  }
+  .pendaftaran-logo {
+    width: 60px;
+    height: 60px;
+  }
+  .pendaftaran-pilihan-wrapper {
+    gap: 1rem;
+    max-width: 99vw;
+  }
+}
+.tabel-pasien {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0;
+}
+.tabel-pasien th, .tabel-pasien td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+}
+.tabel-pasien th {
+  background: #e8eefa;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #223;
+}
+.tabel-pasien tr:last-child td {
+  border-bottom: none;
+}
+.box-validasi {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 24px;
+  max-width: 400px;
+  box-shadow: 0 2px 16px #0001;
+  margin-top: 2vh;
+  text-align: left;
+}
