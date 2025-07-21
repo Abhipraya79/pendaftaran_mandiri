@@ -1,38 +1,123 @@
 import axios from "axios";
 
-// Ambil dari .env
 const BASE_URL = import.meta.env.VITE_API_URL;
-const DEFAULT_TOKEN = import.meta.env.VITE_API_TOKEN;
-const DEFAULT_USERNAME = import.meta.env.VITE_API_USERNAME;
+const USERNAME = import.meta.env.VITE_API_USERNAME;
+const PASSWORD = import.meta.env.VITE_API_PASSWORD;
 
-// Cari pasien by nama
-export const cariPasienByNama = async (nama) => {
+// Ambil token dari backend (pakai username/password default)
+export const getToken = async () => {
+  const url = `${BASE_URL}/api/auth`;
+  const response = await axios.get(url, {
+    headers: {
+      "x-username": USERNAME,
+      "x-password": PASSWORD,
+    },
+  });
+  return {
+    token: response.data.response.token,
+    username: USERNAME,
+  };
+};
+
+// Cari pasien berdasarkan nama
+export const cariPasienByNama = async (nama, token = null, username = null) => {
+  let tokenToUse = token, usernameToUse = username;
+  if (!tokenToUse || !usernameToUse) {
+    const t = await getToken();
+    tokenToUse = t.token;
+    usernameToUse = t.username;
+  }
   const url = `${BASE_URL}/pxref/name?nama=${encodeURIComponent(nama)}&pg=0&sz=10`;
   try {
     const response = await axios.get(url, {
       headers: {
-        "x-token": DEFAULT_TOKEN,
-        "x-username": DEFAULT_USERNAME,
+        "x-token": tokenToUse,
+        "x-username": usernameToUse,
         Accept: "application/json",
       },
     });
     return response.data;
   } catch (err) {
+    // Jika 401, ambil token ulang, lalu retry sekali
+    if (err.response && err.response.status === 401) {
+      const t = await getToken();
+      const retry = await axios.get(url, {
+        headers: {
+          "x-token": t.token,
+          "x-username": t.username,
+          Accept: "application/json",
+        },
+      });
+      return retry.data;
+    }
     throw err.response?.data?.message || "Gagal fetch data pasien";
   }
 };
 
-// Cari pasien by nomor rekam medis (next step, opsional)
-export const cariPasienByRekmed = async (rekmed) => {
+// Cari pasien berdasarkan Nomor Rekam Medis
+export const cariPasienByRekmed = async (rekmed, token = null, username = null) => {
+  let tokenToUse = token, usernameToUse = username;
+  if (!tokenToUse || !usernameToUse) {
+    const t = await getToken();
+    tokenToUse = t.token;
+    usernameToUse = t.username;
+  }
   const url = `${BASE_URL}/pxref/rekmed?rekmed=${encodeURIComponent(rekmed)}`;
   try {
     const response = await axios.get(url, {
       headers: {
+        "x-token": tokenToUse,
+        "x-username": usernameToUse,
         Accept: "application/json",
       },
     });
     return response.data;
   } catch (err) {
+    if (err.response && err.response.status === 401) {
+      const t = await getToken();
+      const retry = await axios.get(url, {
+        headers: {
+          "x-token": t.token,
+          "x-username": t.username,
+          Accept: "application/json",
+        },
+      });
+      return retry.data;
+    }
     throw err.response?.data?.message || "Gagal fetch data pasien";
+  }
+};
+
+// Ambil jadwal dokter harian (jpref/daily)
+export const getJadwalDokterHarian = async (token = null, username = null) => {
+  let tokenToUse = token, usernameToUse = username;
+  if (!tokenToUse || !usernameToUse) {
+    const t = await getToken();
+    tokenToUse = t.token;
+    usernameToUse = t.username;
+  }
+  const url = `${BASE_URL}/jpref/daily`;
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        "x-token": tokenToUse,
+        "x-username": usernameToUse,
+        Accept: "application/json",
+      },
+    });
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      const t = await getToken();
+      const retry = await axios.get(url, {
+        headers: {
+          "x-token": t.token,
+          "x-username": t.username,
+          Accept: "application/json",
+        },
+      });
+      return retry.data;
+    }
+    throw err.response?.data?.message || "Gagal fetch jadwal dokter";
   }
 };
