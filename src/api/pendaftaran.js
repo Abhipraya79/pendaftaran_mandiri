@@ -19,7 +19,6 @@ export const getToken = async () => {
   };
 };
 
-// Cari pasien berdasarkan nama
 export const cariPasienByNama = async (nama, token = null, username = null) => {
   let tokenToUse = token, usernameToUse = username;
   if (!tokenToUse || !usernameToUse) {
@@ -38,7 +37,6 @@ export const cariPasienByNama = async (nama, token = null, username = null) => {
     });
     return response.data;
   } catch (err) {
-    // Jika 401, ambil token ulang, lalu retry sekali
     if (err.response && err.response.status === 401) {
       const t = await getToken();
       const retry = await axios.get(url, {
@@ -54,7 +52,6 @@ export const cariPasienByNama = async (nama, token = null, username = null) => {
   }
 };
 
-// Cari pasien berdasarkan Nomor Rekam Medis
 export const cariPasienByRekmed = async (rekmed, token = null, username = null) => {
   let tokenToUse = token, usernameToUse = username;
   if (!tokenToUse || !usernameToUse) {
@@ -88,7 +85,7 @@ export const cariPasienByRekmed = async (rekmed, token = null, username = null) 
   }
 };
 
-// Ambil jadwal dokter harian (jpref/daily)
+
 export const getJadwalDokterHarian = async (token = null, username = null) => {
   let tokenToUse = token, usernameToUse = username;
   if (!tokenToUse || !usernameToUse) {
@@ -119,5 +116,43 @@ export const getJadwalDokterHarian = async (token = null, username = null) => {
       return retry.data;
     }
     throw err.response?.data?.message || "Gagal fetch jadwal dokter";
+  }
+};
+
+export const savePendaftaranApm = async (payload, token = null, username = null) => {
+  let tokenToUse = token, usernameToUse = username;
+  if (!tokenToUse || !usernameToUse) {
+    const t = await getToken();
+    tokenToUse = t.token;
+    usernameToUse = t.username;
+  }
+
+  const url = `${BASE_URL}/api/apmpx`;
+
+  try {
+    const response = await axios.post(url, payload, {
+      headers: {
+        "x-token": tokenToUse,
+        "x-username": usernameToUse,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      const t = await getToken();
+      const retry = await axios.post(url, payload, {
+        headers: {
+          "x-token": t.token,
+          "x-username": t.username,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      return retry.data;
+    }
+    throw err.response?.data?.message || "Gagal menyimpan pendaftaran APM";
   }
 };

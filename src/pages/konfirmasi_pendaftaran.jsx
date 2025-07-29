@@ -1,0 +1,403 @@
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import { savePendaftaranApm } from "../api/pendaftaran";
+import BackButton from "../components/BackButton";
+
+const tujuanList = [
+  { value: "1", label: "Kunjungan Pertama" },
+  { value: "2", label: "Kontrol" },
+  { value: "3", label: "Rujukan Internal" },
+  { value: "4", label: "Rujukan Eksternal" },
+];
+
+function hitungUmurDetail(tanggalLahir) {
+  if (!tanggalLahir) return "";
+  const lahir = new Date(tanggalLahir);
+  const hariIni = new Date();
+
+  let tahun = hariIni.getFullYear() - lahir.getFullYear();
+  let bulan = hariIni.getMonth() - lahir.getMonth();
+  let hari = hariIni.getDate() - lahir.getDate();
+
+  if (hari < 0) {
+    bulan -= 1;
+    hari += new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate();
+  }
+
+  if (bulan < 0) {
+    tahun -= 1;
+    bulan += 12;
+  }
+
+  return `(${tahun} th, ${bulan} bln, ${hari} hr)`;
+}
+
+const greenBtn = {
+  background: "#22c55e",
+  color: "#fff",
+  border: "none",
+  borderRadius: 10,
+  padding: "16px 0",
+  fontWeight: 700,
+  fontSize: 18,
+  width: "100%",
+  cursor: "pointer",
+  marginTop: 10,
+  marginBottom: 8,
+  transition: "background 0.15s",
+};
+
+const blueBtn = {
+  background: "#2563eb",
+  color: "#fff",
+  border: "none",
+  borderRadius: 10,
+  padding: "16px 0",
+  fontWeight: 700,
+  fontSize: 18,
+  width: "100%",
+  cursor: "pointer",
+  marginTop: 10,
+  marginBottom: 8,
+  transition: "background 0.15s",
+};
+
+export default function KonfirmasiPendaftaran() {
+  const { state } = useLocation();
+  const navigate = useNavigate();
+
+  const pasien = state?.pasien;
+  const dokter = state?.dokter;
+
+  const [mode, setMode] = useState("");
+  const [noRujukan, setNoRujukan] = useState("");
+  const [tujuan, setTujuan] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isBPJSBtnActive = noRujukan.length === 19 && !!tujuan && !loading;
+
+  const handleGoBack = () => {
+    setMode("");       
+    setNoRujukan("");  
+    setTujuan("");     
+    setError("");      
+  };
+
+  const handleCetak = async () => {
+    setLoading(true);
+    setError("");
+
+    if (!pasien?.id || !dokter?.id || !dokter?.jamPraktek) {
+      setError("Data pasien atau dokter tidak lengkap. Harap ulangi proses.");
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      request: {
+        pxId: pasien.id,
+        dokterId: dokter.id,
+        timestamps: new Date().toISOString(),
+        jamPraktek: dokter.jamPraktek,
+        noRef: mode === "bpjs" ? noRujukan : null,
+        jnsKun: mode === "bpjs" ? parseInt(tujuan) : 0,
+      },
+    };
+
+    try {
+      const response = await savePendaftaranApm(payload);
+      
+      const responseData = response?.response || {};
+      const nomorAntrian = responseData.nomorAntrian || 'N/A';
+      const nomorRegistrasi = responseData.nomorRegistrasi || 'N/A'; 
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [80, 170], 
+      });
+
+      doc.setFont("Courier", "normal");
+
+      doc.setFont("Courier", "bold");
+      doc.setFontSize(12);
+      doc.text("KLINIK MUHAMMADIYAH", 40, 10, { align: "center" });
+      
+      doc.setFont("Courier", "normal");
+      doc.setFontSize(10);
+      doc.text("(0322) 321056", 40, 15, { align: "center" });
+      doc.line(5, 18, 75, 18);
+
+      doc.setFont("Courier", "bold");
+      doc.setFontSize(14);
+      doc.text(mode === "bpjs" ? "BPJS" : "UMUM", 5, 25);
+      doc.rect(50, 20, 25, 8); 
+      doc.text(String(nomorAntrian), 62.5, 25.5, { align: "center" });
+
+      doc.setFontSize(10);
+      doc.text("NO", 5, 32);
+      doc.setFontSize(14);
+      doc.text(`: ${String(nomorRegistrasi)}`, 25, 32);
+
+      doc.setFont("Courier", "normal");
+      doc.setFontSize(9);
+      
+      let y = 40; 
+      const printRow = (label, value) => {
+        doc.text(label, 5, y);
+        doc.text(`: ${String(value || '-')}`, 25, y);
+        y += 5;
+      };
+      
+      const tanggalSekarang = new Date();
+      printRow("REGISTER", pasien.id);
+      printRow("TANGGAL", tanggalSekarang.toLocaleDateString("id-ID"));
+      printRow("NAMA", pasien.pxName);
+      
+      doc.text("ALAMAT", 5, y); 
+      const alamat = doc.splitTextToSize(pasien.pxAddress || "-", 48);
+      doc.text(":", 25, y);
+      doc.text(alamat, 27, y);
+      y += (alamat.length * 3.5) + 1.5;
+
+      printRow("ORTU", "-");
+      printRow("JAM", tanggalSekarang.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }));
+
+      const tanggalLahir = pasien.pxBirthdate ? new Date(pasien.pxBirthdate).toLocaleDateString("id-ID") : "-";
+      const umurDetail = hitungUmurDetail(pasien.pxBirthdate);
+      
+      doc.text("T. LAHIR", 5, y);
+      doc.text(`: ${tanggalLahir}`, 25, y);
+      y += 5;
+      
+      if (pasien.pxBirthdate) {
+        doc.text(umurDetail, 27, y);
+      }
+      y += 6;
+
+      printRow("LAYANAN", "Klinik");
+      printRow("SPESIALIS", "Umum");
+      printRow("DOKTER", dokter.dokterName);
+      
+      y += 2;
+      doc.line(5, y, 75, y);
+      y += 5;
+
+      doc.text("Layanan Tindakan Dan Penunjang Medis", 5, y); y += 5;
+      doc.text("[] TINDAKAN", 5, y); y += 4;
+      doc.text("[] LABORAT", 5, y); y += 4;
+      doc.text("[] RADIOLOGI/USG", 5, y); y += 4;
+      doc.text("[] INSTALASI FARMASI", 5, y); y += 6;
+
+      printRow("REG", pasien.id);
+      printRow("NO", nomorRegistrasi);
+      printRow("TGL", tanggalSekarang.toLocaleDateString("id-ID"));
+      printRow("NAM", pasien.pxName);
+
+      doc.save(`struk-pendaftaran-${pasien.id}.pdf`);
+      setTimeout(() => navigate("/"), 1000);
+
+    } catch (err) {
+      console.error("!!! APLIKASI MENGALAMI ERROR !!!", err);
+      let displayMessage = "Terjadi kesalahan yang tidak terduga.";
+      if (err instanceof Error) {
+        displayMessage = err.message;
+      } else if (err && err.response) {
+        const status = err.response.status;
+        const data = err.response.data;
+        const backendMessage = data?.message || data?.error || JSON.stringify(data);
+        displayMessage = `Error dari Server (${status}): ${backendMessage}`;
+      } else if (typeof err === 'string') {
+        displayMessage = err;
+      } else {
+        try {
+          displayMessage = JSON.stringify(err);
+        } catch {
+          displayMessage = "Objek error tidak dapat ditampilkan.";
+        }
+      }
+      setError(`Terjadi error: ${displayMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!pasien || !dokter) {
+    return (
+      <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="box-validasi">
+          <h2>Data tidak lengkap</h2>
+          <div>Silahkan ulangi proses pendaftaran.</div>
+          <button
+            className="pendaftaran-back-btn"
+            style={{
+              marginTop: 20, background: "#dc2626", color: "#fff",
+              border: "none", borderRadius: 8, padding: "8px 20px",
+              fontWeight: 600, fontSize: "1rem", cursor: "pointer",
+              boxShadow: "0 1px 6px #0001",
+            }}
+            onClick={() => navigate("/")}
+          >
+            Kembali ke Awal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!mode) {
+    return (
+      <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <BackButton onClick={() => navigate(-1)}>Kembali ke Pilih Dokter</BackButton>
+        <div style={{
+          background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
+          padding: "40px 40px", minWidth: 380, maxWidth: 400, display: "flex",
+          flexDirection: "column", alignItems: "center",
+        }}>
+          <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30 }}>Pilih Jenis Pasien</h2>
+          <button style={{ ...greenBtn, background: "#22c55e", fontSize: 20, marginBottom: 16 }} onClick={() => setMode("umum")}>
+            Pasien Umum
+          </button>
+          <button style={{ ...blueBtn, background: "#2563eb", fontSize: 20, marginBottom: 16 }} onClick={() => setMode("bpjs")}>
+            Pasien BPJS
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "umum") {
+    return (
+      <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <BackButton onClick={handleGoBack}>Pilih Jenis Pasien Lain</BackButton>
+        <div
+          style={{
+            display: "flex", gap: 32, width: "100%", maxWidth: 900,
+            background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
+            padding: "32px 24px", alignItems: "stretch",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <h2 style={{ fontSize: 21, fontWeight: 700, marginBottom: 18, color: "#3b3b3b" }}>Data Pendaftaran</h2>
+            <table style={{ width: "100%", marginBottom: 20 }}>
+              <tbody>
+                <tr><td><b>Nomor RM</b></td><td>: {pasien.id}</td></tr>
+                <tr><td><b>Nama</b></td><td>: {pasien.pxName}</td></tr>
+                <tr><td><b>Dokter</b></td><td>: {dokter.dokterName}</td></tr>
+                <tr><td><b>Jenis Pasien</b></td><td>: Umum</td></tr>
+              </tbody>
+            </table>
+            <div style={{ fontSize: 13, color: "#64748b" }}>
+              Pastikan data sudah benar sebelum melanjutkan ke proses berikutnya.
+            </div>
+          </div>
+          <div style={{ flex: 1.2, minWidth: 280, paddingLeft: 16, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 18, color: "#3856b0", textAlign: "center" }}>
+              Proses Pendaftaran Pasien Umum
+            </h3>
+            <div style={{ fontSize: 15, color: "#373737", marginBottom: 20, textAlign: "center" }}>
+              Tekan tombol berikut untuk mencetak struk pendaftaran.<br />
+              Struk wajib dibawa ke loket/mesin pendaftaran.
+            </div>
+            <button onClick={handleCetak} style={{ ...greenBtn, fontSize: 20, width: "100%", maxWidth: 340, margin: "0 auto" }} disabled={loading}>
+              {loading ? "Memproses..." : "Cetak Struk"}
+            </button>
+            {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }}>{error}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <BackButton onClick={handleGoBack}>Pilih Jenis Pasien Lain</BackButton>
+      <div
+        style={{
+          display: "flex", gap: 32, width: "100%", maxWidth: 900,
+          background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
+          padding: "32px 24px", alignItems: "stretch",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <h2 style={{ fontSize: 21, fontWeight: 700, marginBottom: 18, color: "#3b3b3b" }}>Data Pendaftaran</h2>
+          <table style={{ width: "100%", marginBottom: 20 }}>
+            <tbody>
+              <tr><td><b>Nomor RM</b></td><td>: {pasien.id}</td></tr>
+              <tr><td><b>Nama</b></td><td>: {pasien.pxName}</td></tr>
+              <tr><td><b>Dokter</b></td><td>: {dokter.dokterName}</td></tr>
+              <tr><td><b>Jenis Pasien</b></td><td>: BPJS</td></tr>
+            </tbody>
+          </table>
+          <div style={{ fontSize: 13, color: "#64748b" }}>
+            Pastikan data sudah benar sebelum melanjutkan ke proses berikutnya.
+          </div>
+        </div>
+        <div style={{ flex: 1.2, minWidth: 280, paddingLeft: 16, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 13, color: "#3856b0", textAlign: "center" }}>
+            Proses Pendaftaran Pasien BPJS
+          </h3>
+          <div style={{ fontSize: 15, color: "#373737", marginBottom: 10, textAlign: "center" }}>
+            <b>Scan Barcode Rujukan BPJS</b> Anda atau Input Manual <b>Nomor Rujukan BPJS</b> di bawah ini, kemudian pilih tujuan pendaftaran:
+          </div>
+          <input
+            type="text"
+            value={noRujukan}
+            onChange={e => {
+              const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 19);
+              setNoRujukan(val);
+              if (tujuan && val.length < 19) setTujuan("");
+            }}
+            placeholder="Input No. Rujukan BPJS (19 karakter)"
+            className="pendaftaran-input"
+            style={{
+              width: "100%", maxWidth: 320, fontSize: 17,
+              margin: "0 auto 12px auto", display: "block",
+              textAlign: "center", letterSpacing: "2px"
+            }}
+            maxLength={19}
+            autoFocus
+          />
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, textAlign: "center" }}>
+            *Hanya angka/huruf, wajib isi 19 karakter.
+          </div>
+          <div style={{
+            marginBottom: 20, display: "flex", flexDirection: "column",
+            gap: 7, alignItems: "center"
+          }}>
+            {tujuanList.map(jk => (
+              <label key={jk.value} style={{
+                fontWeight: 500, display: "flex", alignItems: "center",
+                color: noRujukan.length === 19 ? "#2a3450" : "#aaa",
+                fontSize: 15, gap: 8
+              }}>
+                <input
+                  type="radio" name="tujuan"
+                  disabled={noRujukan.length !== 19}
+                  checked={tujuan === jk.value}
+                  onChange={() => setTujuan(jk.value)}
+                  style={{ accentColor: "#2563eb", marginRight: 6 }}
+                />
+                {jk.label}
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={handleCetak}
+            disabled={!isBPJSBtnActive}
+            style={{
+              ...blueBtn, fontSize: 20, width: "100%", maxWidth: 340,
+              margin: "0 auto", opacity: isBPJSBtnActive ? 1 : 0.7,
+              cursor: isBPJSBtnActive ? "pointer" : "not-allowed",
+            }}
+          >
+            {loading ? "Memproses..." : "Cetak Struk"}
+          </button>
+          {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }}>{error}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,28 +1,27 @@
+// src/components/PilihanCard.jsx
 import React from "react";
 
-const PilihanCard = ({ title, onClick }) => (
-  <div
-    onClick={onClick}
-    style={{
-      background: "#fff",
-      border: "2px solid #3b82f6",
-      borderRadius: 12,
-      boxShadow: "0 2px 10px #0001",
-      padding: 30,
-      minWidth: 180,
-      margin: 20,
-      fontWeight: 600,
-      color: "#1e293b",
-      fontSize: 20,
-      cursor: "pointer",
-      textAlign: "center",
-      transition: "all 0.2s"
-    }}
-    onMouseDown={e => (e.target.style.background = "#f1f5f9")}
-    onMouseUp={e => (e.target.style.background = "#fff")}
-  >
-    {title}
-  </div>
-);
-
-export default PilihanCard;
+export default function PilihanCard({ title, onClick, color }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: color,
+        color: "#fff",
+        border: "none",
+        borderRadius: 12,
+        margin: 16,
+        width: 220,
+        fontSize: 20,
+        fontWeight: 700,
+        cursor: "pointer",
+        textAlign: "center",
+        boxShadow: "0 2px 10px #0001",
+        padding: 18,
+        transition: "background 0.18s",
+      }}
+    >
+      {title}
+    </button>
+  );
+}

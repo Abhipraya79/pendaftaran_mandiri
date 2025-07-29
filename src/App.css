@@ -189,3 +189,19 @@ body, #root {
   margin-top: 2vh;
   text-align: left;
 }
+
+@media (max-width: 480px) {
+  .pilihan-card {
+    width: 140px;
+    font-size: 16px;
+    margin: 8px;
+    padding: 14px;
+  }
+  .pendaftaran-title {
+    font-size: 28px !important;
+  }
+  .tabel-pasien th,
+  .tabel-pasien td {
+    font-size: 14px;
+  }
+}
