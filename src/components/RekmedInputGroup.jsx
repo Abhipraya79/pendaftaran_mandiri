@@ -1,8 +1,6 @@
-// src/components/RekmedInputGroup.jsx
 import React from "react";
 
 export default function RekmedInputGroup({ values, onChange }) {
-  // values: array of 3 string, onChange: nextArr => void
   const handleChange = (idx, val) => {
     if (!/^\d{0,2}$/.test(val)) return;
     const next = [...values];

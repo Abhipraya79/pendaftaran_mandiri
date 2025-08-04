@@ -1,21 +1,33 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { cariPasienByNama, cariPasienByRekmed } from "../api/pendaftaran";
-import PilihanCard from "../components/PilihanCard";
+import PilihanCard from "../components/pilihanCard";
 import BackButton from "../components/BackButton";
 import PasienTable from "../components/PasienTable";
 import RekmedInputGroup from "../components/RekmedInputGroup";
-import KonfirmasiPasien from "../components/KonfirmasiPasien";
+import withReactContent from "sweetalert2-react-content";
+const MySwal = withReactContent(Swal);
 
 const COLOR_NAME_METHOD = "#2ab36b";
 const COLOR_REKMED_METHOD = "#2276c3";
-
+const LABEL_JENIS_KELAMIN = { L: "Laki-laki", P: "Perempuan" };
 const STEP = {
-  CHOOSE_METHOD: "CHOOSE_METHOD",
-  INPUT_NAME: "INPUT_NAME",
-  INPUT_REKMED: "INPUT_REKMED",
-  CONFIRM: "CONFIRM",
+  CHOOSE_METHOD: 0,
+  INPUT_NAME: 1,
+  INPUT_REKMED: 2,
 };
+
+function hitungUmur(tglLahir) {
+  const now = new Date();
+  const lahir = new Date(tglLahir);
+  let umur = now.getFullYear() - lahir.getFullYear();
+  const m = now.getMonth() - lahir.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < lahir.getDate())) {
+    umur--;
+  }
+  return umur;
+}
 
 export default function PendaftaranMandiri() {
   const nav = useNavigate();
@@ -23,7 +35,6 @@ export default function PendaftaranMandiri() {
   const [namaCari, setNamaCari] = useState("");
   const [rekmedParts, setRekmedParts] = useState(["", "", ""]);
   const [pasienList, setPasienList] = useState([]);
-  const [selectedPasien, setSelectedPasien] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -31,28 +42,77 @@ export default function PendaftaranMandiri() {
     setNamaCari("");
     setRekmedParts(["", "", ""]);
     setPasienList([]);
-    setSelectedPasien(null);
     setMsg("");
   };
+
   const goBack = () => {
     resetAll();
     setStep(STEP.CHOOSE_METHOD);
   };
+
+async function handlePilihPasien(pasien) {
+  const umur = hitungUmur(pasien.pxBirthdate);
+
+  const result = await MySwal.fire({
+    title: '<span style="font-size: 1.25rem; font-weight: bold;">Konfirmasi Pasien Yang Akan Didaftarkan</span>',
+    html: `
+      <div style="text-align: left; font-size: 1rem; line-height: 1.8;">
+        <div style="display: flex; margin-bottom: 8px;">
+          <div style="width: 140px; flex-shrink: 0;"><strong>Nama Pasien</strong></div>
+          <div style="margin-right: 10px;">:</div>
+          <div style="flex: 1; word-break: break-word;">${pasien.pxName}</div>
+        </div>
+        <div style="display: flex; margin-bottom: 8px;">
+          <div style="width: 140px; flex-shrink: 0;"><strong>No RM</strong></div>
+          <div style="margin-right: 10px;">:</div>
+          <div style="flex: 1; word-break: break-word;">${pasien.id}</div>
+        </div>
+        <div style="display: flex; margin-bottom: 8px;">
+          <div style="width: 140px; flex-shrink: 0;"><strong>Alamat</strong></div>
+          <div style="margin-right: 10px;">:</div>
+          <div style="flex: 1; word-break: break-word;">${pasien.pxAddress}</div>
+        </div>
+        <div style="display: flex; margin-bottom: 8px;">
+          <div style="width: 140px; flex-shrink: 0;"><strong>Tanggal Lahir</strong></div>
+          <div style="margin-right: 10px;">:</div>
+          <div style="flex: 1; word-break: break-word;">${pasien.pxBirthdate}</div>
+        </div>
+        <div style="display: flex; margin-bottom: 8px;">
+          <div style="width: 140px; flex-shrink: 0;"><strong>Umur</strong></div>
+          <div style="margin-right: 10px;">:</div>
+          <div style="flex: 1; word-break: break-word;">${umur} tahun</div>
+        </div>
+        <div style="display: flex; margin-bottom: 8px;">
+          <div style="width: 140px; flex-shrink: 0;"><strong>Jenis Kelamin</strong></div>
+          <div style="margin-right: 10px;">:</div>
+          <div style="flex: 1; word-break: break-word;">${LABEL_JENIS_KELAMIN[pasien.pxSex] || pasien.pxSex || "-"}</div>
+        </div>
+      </div>
+    `,
+    icon: "info",
+    showCancelButton: true,
+    confirmButtonText: "Lanjutkan",
+    cancelButtonText: "Kembali",
+    confirmButtonColor: "#10b981",
+    cancelButtonColor: "#ef4444",
+  });
+
+  if (result.isConfirmed) {
+    nav("/pilih-dokter", { state: { pasien } });
+  }
+}
+
+
 
   async function submitNama(e) {
     e?.preventDefault();
     if (!namaCari.trim()) return;
     setLoading(true);
     setMsg("");
-    setSelectedPasien(null);
     try {
-      const result = await cariPasienByNama(namaCari.trim());
-      if (
-        result.response &&
-        Array.isArray(result.response) &&
-        result.response.length > 0
-      ) {
-        setPasienList(result.response);
+      const res = await cariPasienByNama(namaCari.trim());
+      if (res.response && Array.isArray(res.response) && res.response.length > 0) {
+        setPasienList(res.response);
       } else {
         setPasienList([]);
         setMsg("Data tidak ditemukan.");
@@ -67,7 +127,6 @@ export default function PendaftaranMandiri() {
   async function submitRekmed(e) {
     e?.preventDefault();
     setMsg("");
-    setSelectedPasien(null);
     if (rekmedParts.some(rm => rm.length !== 2)) {
       setMsg("Semua kolom harus diisi 2 digit angka.");
       return;
@@ -75,10 +134,9 @@ export default function PendaftaranMandiri() {
     setLoading(true);
     const rekmed = `${rekmedParts[0]}.${rekmedParts[1]}.${rekmedParts[2]}`;
     try {
-      const result = await cariPasienByRekmed(rekmed);
-      if (result.response && typeof result.response === "object" && result.response.id) {
-        setSelectedPasien(result.response);
-        setStep(STEP.CONFIRM);
+      const res = await cariPasienByRekmed(rekmed);
+      if (res.response && typeof res.response === "object" && res.response.id) {
+        await handlePilihPasien(res.response);
       } else {
         setMsg("Nomor rekam medis tidak ditemukan.");
       }
@@ -88,13 +146,8 @@ export default function PendaftaranMandiri() {
     setLoading(false);
   }
 
-  function pilihPasien(p) {
-    setSelectedPasien(p);
-    setStep(STEP.CONFIRM);
-  }
-
-  function confirmPasien(p) {
-    nav("/pilih-dokter", { state: { pasien: p } });
+  function pilihPasien(pasien) {
+    handlePilihPasien(pasien);
   }
 
   switch (step) {
@@ -113,20 +166,13 @@ export default function PendaftaranMandiri() {
           <div className="pendaftaran-instruksi" style={{ fontSize: 24, marginBottom: 30 }}>
             Silakan lanjutkan pendaftaran dengan <b>Nama</b> atau <b>Nomor Rekam Medis</b>
           </div>
-          <div className="pendaftaran-pilihan-wrapper" style={{ display: "flex", justifyContent: "center" }}>
-            <PilihanCard
-              title="Nama"
-              onClick={() => setStep(STEP.INPUT_NAME)}
-              color={COLOR_NAME_METHOD}
-            />
-            <PilihanCard
-              title="Nomor Rekam Medis"
-              onClick={() => setStep(STEP.INPUT_REKMED)}
-              color={COLOR_REKMED_METHOD}
-            />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <PilihanCard title="Nama" onClick={() => setStep(STEP.INPUT_NAME)} color={COLOR_NAME_METHOD} />
+            <PilihanCard title="Nomor Rekam Medis" onClick={() => setStep(STEP.INPUT_REKMED)} color={COLOR_REKMED_METHOD} />
           </div>
         </div>
       );
+
     case STEP.INPUT_NAME:
       return (
         <div className="pendaftaran-bg">
@@ -137,7 +183,7 @@ export default function PendaftaranMandiri() {
               type="text"
               value={namaCari}
               onChange={e => setNamaCari(e.target.value)}
-              placeholder="Masukkan nama anda disini (Contoh: Budi)"
+              placeholder="Masukkan nama anda disini"
               className="pendaftaran-input"
               required
               minLength={1}
@@ -146,8 +192,14 @@ export default function PendaftaranMandiri() {
               type="submit"
               disabled={loading || namaCari.length < 1}
               style={{
-                padding: "12px 0", background: "#3b82f6", color: "#fff",
-                border: "none", borderRadius: 8, fontSize: "1rem", fontWeight: 600, cursor: "pointer"
+                padding: "12px 0",
+                background: "#3b82f6",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                fontSize: "1rem",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
               {loading ? "Mencari..." : "Cari"}
@@ -157,19 +209,14 @@ export default function PendaftaranMandiri() {
           <PasienTable data={pasienList} onSelect={pilihPasien} />
         </div>
       );
+
     case STEP.INPUT_REKMED:
       return (
         <div className="pendaftaran-bg">
           <BackButton onClick={goBack} />
           <h2 className="pendaftaran-subtitle">Masukkan Nomor Rekam Medis Anda</h2>
-          <form
-            onSubmit={submitRekmed}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}
-          >
-            <RekmedInputGroup
-              values={rekmedParts}
-              onChange={next => setRekmedParts(next)}
-            />
+          <form onSubmit={submitRekmed} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+            <RekmedInputGroup values={rekmedParts} onChange={setRekmedParts} />
             <button
               type="submit"
               disabled={loading || rekmedParts.some(rm => rm.length !== 2)}
@@ -182,7 +229,7 @@ export default function PendaftaranMandiri() {
                 fontSize: "1rem",
                 fontWeight: 600,
                 cursor: "pointer",
-                width: 180
+                width: 180,
               }}
             >
               {loading ? "Mencari..." : "Cari"}
@@ -191,14 +238,7 @@ export default function PendaftaranMandiri() {
           {msg && <div style={{ color: "red", marginTop: 12 }}>{msg}</div>}
         </div>
       );
-    case STEP.CONFIRM:
-      return (
-        <KonfirmasiPasien
-          pasien={selectedPasien}
-          onBack={goBack}
-          onConfirm={confirmPasien}
-        />
-      );
+
     default:
       return null;
   }

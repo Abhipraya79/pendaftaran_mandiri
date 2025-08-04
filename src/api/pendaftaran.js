@@ -4,7 +4,6 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 const USERNAME = import.meta.env.VITE_API_USERNAME;
 const PASSWORD = import.meta.env.VITE_API_PASSWORD;
 
-// Ambil token dari backend (pakai username/password default)
 export const getToken = async () => {
   const url = `${BASE_URL}/api/auth`;
   const response = await axios.get(url, {
@@ -153,6 +152,6 @@ export const savePendaftaranApm = async (payload, token = null, username = null)
       });
       return retry.data;
     }
-    throw err.response?.data?.message || "Gagal menyimpan pendaftaran APM";
+    throw err.response?.data?.message || "Gagal menyimpan pendaftaran";
   }
 };

@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { savePendaftaranApm } from "../api/pendaftaran";
 import BackButton from "../components/BackButton";
 
+
 const tujuanList = [
   { value: "1", label: "Kunjungan Pertama" },
   { value: "2", label: "Kontrol" },
@@ -84,7 +85,7 @@ export default function KonfirmasiPendaftaran() {
     setTujuan("");     
     setError("");      
   };
-
+  
   const handleCetak = async () => {
     setLoading(true);
     setError("");
@@ -123,7 +124,7 @@ export default function KonfirmasiPendaftaran() {
 
       doc.setFont("Courier", "bold");
       doc.setFontSize(12);
-      doc.text("KLINIK MUHAMMADIYAH", 40, 10, { align: "center" });
+      doc.text("KLINIK MUHAMMADIYAH LAMONGAN", 40, 10, { align: "center" });
       
       doc.setFont("Courier", "normal");
       doc.setFontSize(10);
@@ -194,14 +195,16 @@ export default function KonfirmasiPendaftaran() {
       printRow("REG", pasien.id);
       printRow("NO", nomorRegistrasi);
       printRow("TGL", tanggalSekarang.toLocaleDateString("id-ID"));
-      printRow("NAM", pasien.pxName);
-
+      printRow("NAMA", pasien.pxName);
+      const pdfBlob = doc.output("bloburl");
+      window.open(pdfBlob, "_blank");
       doc.save(`struk-pendaftaran-${pasien.id}.pdf`);
+
       setTimeout(() => navigate("/"), 1000);
 
     } catch (err) {
-      console.error("!!! APLIKASI MENGALAMI ERROR !!!", err);
-      let displayMessage = "Terjadi kesalahan yang tidak terduga.";
+      console.error("error", err);
+      let displayMessage = "Terjadi kesalahan";
       if (err instanceof Error) {
         displayMessage = err.message;
       } else if (err && err.response) {
@@ -252,18 +255,101 @@ export default function KonfirmasiPendaftaran() {
       <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <BackButton onClick={() => navigate(-1)}>Kembali ke Pilih Dokter</BackButton>
         <div style={{
-          background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
-          padding: "40px 40px", minWidth: 380, maxWidth: 400, display: "flex",
-          flexDirection: "column", alignItems: "center",
+          background: "#fff",
+          borderRadius: 18,
+          boxShadow: "0 2px 16px #0002",
+          padding: "40px 32px",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "stretch",
+          gap: 24,
+          maxWidth: 900,
+          width: "100%",
+          justifyContent: "center",
+          marginTop: 40,
+       }}>
+
+  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+    <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30, textAlign: "center" }}>
+      Silahkan Pilih Jenis Pasien
+    </h2>
+    <button
+      style={{ ...greenBtn, fontSize: 20, marginBottom: 16 }}
+      onClick={() => setMode("umum")}
+    >
+      Pasien Umum
+    </button>
+    <button
+      style={{ ...blueBtn, fontSize: 20, marginBottom: 16 }}
+      onClick={() => setMode("bpjs")}
+    >
+      Pasien BPJS
+    </button>
+  </div>
+ 
+    <div style={{
+      flex: 1,
+      background: "#f9fafb",
+      border: "1px solid #d0d0d0ff",
+      borderRadius: 12,
+      padding: "24px 24px",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+    }}>
+
+  <div>
+    <h3 style={{
+      marginBottom: 14,
+      fontSize: 20,
+      fontWeight: 700,
+      color: "#2563eb",
+      borderBottom: "2px solid #cbd5e1",
+      paddingBottom: 8,
+    }}>
+      Informasi Pendaftaran
+    </h3>
+
+    <div style={{ marginBottom: 16 }}>
+      <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
+        Pasien Umum
+      </h4>
+      <p style={{ margin: 0, fontSize: 14, color: "#475569", lineHeight: 1.5 }}>
+        Pasien Umum tidak memerlukan rujukan dan biaya pelayanan ditanggung secara pribadi. 
+      </p>
+    </div>
+
+    <div style={{ marginBottom: 16 }}>
+      <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
+        Pasien BPJS
+      </h4>
+      <p style={{ margin: 0, fontSize: 14, color: "#475569", lineHeight: 1.5 }}>
+        Wajib membawa <strong>nomor rujukan aktif</strong> dari faskes 1 atau rumah sakit rujukan. Juga diwajibkan memilih tujuan pendaftaran.
+      </p>
+    </div>
+  </div>
+
+        <div style={{
+          background: "#ecfdf5",
+          border: "1px solid #34d399",
+          padding: 14,
+          borderRadius: 8,
+          color: "#065f46",
+          fontSize: 14,
+          fontWeight: 500,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 8,
         }}>
-          <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30 }}>Pilih Jenis Pasien</h2>
-          <button style={{ ...greenBtn, background: "#22c55e", fontSize: 20, marginBottom: 16 }} onClick={() => setMode("umum")}>
-            Pasien Umum
-          </button>
-          <button style={{ ...blueBtn, background: "#2563eb", fontSize: 20, marginBottom: 16 }} onClick={() => setMode("bpjs")}>
-            Pasien BPJS
-          </button>
-        </div>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" height="20" viewBox="0 0 24 24" width="20" stroke="#10b981">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"/>
+    </svg>
+    <span>
+      Pilih jenis pasien sesuai dengan hak pelayanan Anda untuk menghindari kendala pada proses pemeriksaan atau penagihan.
+    </span>
+  </div>
+</div>
+</div>
       </div>
     );
   }
@@ -299,7 +385,7 @@ export default function KonfirmasiPendaftaran() {
             </h3>
             <div style={{ fontSize: 15, color: "#373737", marginBottom: 20, textAlign: "center" }}>
               Tekan tombol berikut untuk mencetak struk pendaftaran.<br />
-              Struk wajib dibawa ke loket/mesin pendaftaran.
+              <b>Struk wajib dibawa  setelah dicetak</b>
             </div>
             <button onClick={handleCetak} style={{ ...greenBtn, fontSize: 20, width: "100%", maxWidth: 340, margin: "0 auto" }} disabled={loading}>
               {loading ? "Memproses..." : "Cetak Struk"}
@@ -318,7 +404,7 @@ export default function KonfirmasiPendaftaran() {
         style={{
           display: "flex", gap: 32, width: "100%", maxWidth: 900,
           background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
-          padding: "32px 24px", alignItems: "stretch",
+          padding: "32px 24px", alignItems: "stretch", marginTop : 20
         }}
       >
         <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -350,18 +436,19 @@ export default function KonfirmasiPendaftaran() {
               setNoRujukan(val);
               if (tujuan && val.length < 19) setTujuan("");
             }}
-            placeholder="Input No. Rujukan BPJS (19 karakter)"
+            placeholder="Input No. Rujukan BPJS"
             className="pendaftaran-input"
             style={{
               width: "100%", maxWidth: 320, fontSize: 17,
               margin: "0 auto 12px auto", display: "block",
-              textAlign: "center", letterSpacing: "2px"
+              textAlign: "center", letterSpacing: "2px",
+              textTransform: "uppercase",
             }}
             maxLength={19}
             autoFocus
           />
           <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, textAlign: "center" }}>
-            *Hanya angka/huruf, wajib isi 19 karakter.
+            *Hanya angka/huruf, wajib diisi !
           </div>
           <div style={{
             marginBottom: 20, display: "flex", flexDirection: "column",

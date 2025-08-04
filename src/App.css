@@ -63,7 +63,7 @@ body, #root {
 
 .pendaftaran-logo {
   width: 90px;
-  height: 90px;
+  height: 120px;
   margin-bottom: 24px;
   object-fit: contain;
 }
@@ -111,7 +111,7 @@ body, #root {
 }
 
 .pendaftaran-input {
-  width: 90vw;
+  width: 150vw;
   max-width: 410px;
   padding: 1.05rem;
   font-size: 1.17rem;

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { getJadwalDokterHarian } from "../api/pendaftaran";
 import { useLocation, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import "../App.css";
+
+const MySwal = withReactContent(Swal);
 
 function formatJam(jam) {
   if (!jam) return "";
@@ -64,24 +68,31 @@ const PilihDokter = () => {
     fetchData();
   }, []);
 
-  const handlePilihDokter = (dokterDariJadwal) => {
-
-
-    const dokterDataUntukKonfirmasi = {
-      id: dokterDariJadwal.dokterId,
-      dokterName: dokterDariJadwal.dokterName,
-      jamPraktek: `${formatJam(dokterDariJadwal.beginTime)} - ${formatJam(dokterDariJadwal.endTime)}`
-    };
-
-    console.log("DATA DOKTER YANG DIKIRIM KE HALAMAN KONFIRMASI:", dokterDataUntukKonfirmasi);
-
+  const handlePilihDokter = (dokter) => {
     navigate("/konfirmasi-pendaftaran", {
-      state: { pasien, dokter: dokterDataUntukKonfirmasi }
+      state: {
+        pasien,
+        dokter: {
+          id: dokter.dokterId,
+          dokterName: dokter.dokterName,
+          jamPraktek: `${formatJam(dokter.beginTime)} - ${formatJam(dokter.endTime)}`
+        }
+      }
     });
   };
 
-  const handleBatal = () => {
-    navigate("/");
+  const handleBatal = async () => {
+    const result = await MySwal.fire({
+      title: "Batalkan Pendaftaran?",
+      text: "Data yang diisi akan dihapus dan kembali ke halaman awal.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, batalkan",
+      cancelButtonText: "Tidak",
+    });
+    if (result.isConfirmed) navigate("/");
   };
 
   if (!pasien) {
@@ -106,6 +117,7 @@ const PilihDokter = () => {
         boxShadow: "none",
         padding: 0
       }}>
+        {/* 🔴 Tombol Batal */}
         <div style={{ marginBottom: 16 }}>
           <button
             onClick={handleBatal}
@@ -124,11 +136,42 @@ const PilihDokter = () => {
             Batalkan Pendaftaran
           </button>
         </div>
-        <h1 className="pendaftaran-title" style={{ marginBottom: 2, fontSize: 28, color: "#2a3450" }}>
+
+        {/* 🧾 Informasi Pasien */}
+        <div style={{
+          background: "#f0f9ff",
+          borderRadius: 12,
+          padding: "20px 28px",
+          marginBottom: 24,
+          color: "#1e3a8a",
+          boxShadow: "0 1px 8px #0001",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          width: "560px",
+        }}>
+          <div style={{ fontSize: 20, fontWeight: "bold" }}>Informasi Pasien</div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ width: 150, fontWeight: 600 }}>Nama Pasien</div>
+            <div>: {pasien.pxName}</div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ width: 150, fontWeight: 600 }}>No RM</div>
+            <div>: {pasien.id}</div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ width: 150, fontWeight: 600 }}>Tanggal Lahir</div>
+            <div>: {pasien.pxBirthdate}</div>
+          </div>
+        </div>
+
+        {/* 🕐 Header Waktu dan Jadwal */}
+        <h1 className="pendaftaran-title" style={{ fontSize: 28, color: "#2a3450", marginBottom: 6 }}>
           Jadwal Praktek Dokter Klinik Muhammadiyah Lamongan
         </h1>
+
         <div style={{
-          background: "linear-gradient(90deg,#6f48f7 40%,#8e6aff 100%)",
+          background: "#2563eb",
           color: "#fff",
           fontWeight: 700,
           borderRadius: 12,
@@ -139,6 +182,7 @@ const PilihDokter = () => {
         }}>
           Pilih Dokter / Poli Tujuan
         </div>
+
         <div style={{
           textAlign: "center",
           fontSize: 18,
@@ -146,24 +190,24 @@ const PilihDokter = () => {
           marginBottom: 18,
           color: "#2a3450",
         }}>
-          Waktu Sekarang: <span style={{ color: "#6545ee" }}>{waktuSekarang}</span>
+          Waktu Sekarang: <span style={{ color: "#2563eb" }}>{waktuSekarang}</span>
         </div>
 
+        {/* 📅 Daftar Jadwal */}
         {loading && <div>Mengambil data jadwal dokter...</div>}
         {errMsg && <div style={{ color: "red" }}>{errMsg}</div>}
         {!loading && !errMsg && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: 38,
-              marginTop: 18,
-              padding: "0 20px 44px 20px",
-              overflowX: "auto",
-            }}
-          >
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: 38,
+            marginTop: 18,
+            padding: "0 20px 44px 20px",
+          }}>
             {jadwal.length === 0 ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#444" }}>Tidak ada dokter ditemukan.</div>
+              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#444" }}>
+                Tidak ada dokter ditemukan.
+              </div>
             ) : jadwal.map((j, idx) => {
               const habis = isHabis(j.beginTime, j.endTime);
               return (
@@ -174,38 +218,31 @@ const PilihDokter = () => {
                     borderRadius: 28,
                     boxShadow: "0 6px 24px #0002",
                     padding: "38px 18px 30px 18px",
-                    minHeight: 390,
-                    minWidth: 0,
                     maxWidth: 420,
-                    wordBreak: "break-word",
-                    position: "relative",
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
+                    alignItems: "center"
                   }}
                 >
                   <img
-                    src={j.photo && j.photo.startsWith("data:image") ? j.photo : (j.photo ? `data:image/jpeg;base64,${j.photo}` : "/no-foto.png")}
+                    src={j.photo?.startsWith("data:image") ? j.photo : (j.photo ? `data:image/jpeg;base64,${j.photo}` : "/no-foto.png")}
                     alt={j.dokterName}
                     style={{
-                      width: "auto",
-                      height: "auto",
                       maxWidth: 140,
                       maxHeight: 160,
                       objectFit: "contain",
                       borderRadius: 16,
-                      margin: "0 auto 14px"
+                      marginBottom: 14
                     }}
                   />
-                  <div style={{ fontWeight: 800, fontSize: 22, marginTop: 4, color: "#413096", textAlign: "center", lineHeight: 1.2 }}>
+                  <div style={{ fontWeight: 800, fontSize: 22, color: "#413096", textAlign: "center" }}>
                     {j.dokterName}
                   </div>
-                  <div style={{ fontSize: 17, color: "#464646", marginTop: 7, textAlign: "center" }}>
+                  <div style={{ fontSize: 17, color: "#464646", marginTop: 7 }}>
                     <span style={{ fontWeight: 600 }}>Kode DPJP: {j.dpjp || "-"}</span>
                   </div>
                   <div style={{
-                    background: "#f7f7fc",
+                    background: "#d6e2ff",
                     borderRadius: 10,
                     padding: "13px 0",
                     fontSize: 19,
@@ -217,7 +254,7 @@ const PilihDokter = () => {
                   }}>
                     {formatJam(j.beginTime)} WIB - {formatJam(j.endTime)} WIB
                   </div>
-                  <div style={{ width: "100%", marginTop: "auto", textAlign: "center" }}>
+                  <div style={{ width: "100%", textAlign: "center" }}>
                     {habis ? (
                       <div style={{
                         padding: "11px 0",
@@ -240,9 +277,7 @@ const PilihDokter = () => {
                           fontWeight: 800,
                           fontSize: 22,
                           border: "none",
-                          marginTop: 0,
                           cursor: "pointer",
-                          letterSpacing: "0.5px",
                         }}
                         onClick={() => handlePilihDokter(j)}
                       >

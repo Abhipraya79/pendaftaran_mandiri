@@ -1,6 +1,3 @@
-// src/components/PilihanCard.jsx
-import React from "react";
-
 export default function PilihanCard({ title, onClick, color }) {
   return (
     <button
@@ -11,8 +8,8 @@ export default function PilihanCard({ title, onClick, color }) {
         border: "none",
         borderRadius: 12,
         margin: 16,
-        width: 220,
-        fontSize: 20,
+        width: 250,
+        fontSize: 24,
         fontWeight: 700,
         cursor: "pointer",
         textAlign: "center",

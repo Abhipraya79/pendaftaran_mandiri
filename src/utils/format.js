@@ -9,6 +9,5 @@ export function formatJenisKelamin(kode) {
 
 
 export function joinRekmed(parts) {
-  // parts: ["12","34","56"] → "12.34.56"
   return parts.filter(Boolean).join(".");
 }
