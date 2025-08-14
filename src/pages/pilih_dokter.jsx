@@ -117,7 +117,6 @@ const PilihDokter = () => {
         boxShadow: "none",
         padding: 0
       }}>
-        {/* 🔴 Tombol Batal */}
         <div style={{ marginBottom: 16 }}>
           <button
             onClick={handleBatal}
@@ -137,7 +136,6 @@ const PilihDokter = () => {
           </button>
         </div>
 
-        {/* 🧾 Informasi Pasien */}
         <div style={{
           background: "#f0f9ff",
           borderRadius: 12,
@@ -165,7 +163,6 @@ const PilihDokter = () => {
           </div>
         </div>
 
-        {/* 🕐 Header Waktu dan Jadwal */}
         <h1 className="pendaftaran-title" style={{ fontSize: 28, color: "#2a3450", marginBottom: 6 }}>
           Jadwal Praktek Dokter Klinik Muhammadiyah Lamongan
         </h1>
@@ -193,7 +190,6 @@ const PilihDokter = () => {
           Waktu Sekarang: <span style={{ color: "#2563eb" }}>{waktuSekarang}</span>
         </div>
 
-        {/* 📅 Daftar Jadwal */}
         {loading && <div>Mengambil data jadwal dokter...</div>}
         {errMsg && <div style={{ color: "red" }}>{errMsg}</div>}
         {!loading && !errMsg && (
@@ -218,10 +214,11 @@ const PilihDokter = () => {
                     borderRadius: 28,
                     boxShadow: "0 6px 24px #0002",
                     padding: "38px 18px 30px 18px",
-                    maxWidth: 420,
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center"
+                    alignItems: "center",
+                    maxWidth: "100%",
+                    minHeight: 440,
                   }}
                 >
                   <img
@@ -229,13 +226,13 @@ const PilihDokter = () => {
                     alt={j.dokterName}
                     style={{
                       maxWidth: 140,
-                      maxHeight: 160,
-                      objectFit: "contain",
+                      height: 160,
+                      objectFit: "cover",
                       borderRadius: 16,
                       marginBottom: 14
                     }}
                   />
-                  <div style={{ fontWeight: 800, fontSize: 22, color: "#413096", textAlign: "center" }}>
+                  <div style={{ fontWeight: 800, fontSize: 22, color: "#413096", textAlign: "center", minHeight: 60 }}>
                     {j.dokterName}
                   </div>
                   <div style={{ fontSize: 17, color: "#464646", marginTop: 7 }}>
@@ -255,8 +252,8 @@ const PilihDokter = () => {
                     {formatJam(j.beginTime)} WIB - {formatJam(j.endTime)} WIB
                   </div>
                   <div style={{ width: "100%", textAlign: "center" }}>
-                    {habis ? (
-                      <div style={{
+                   {habis ? (
+                     <div style={{
                         padding: "11px 0",
                         background: "#fde7e7",
                         color: "#d32f2f",

@@ -114,28 +114,29 @@ export default function KonfirmasiPendaftaran() {
       const nomorAntrian = responseData.nomorAntrian || 'N/A';
       const nomorRegistrasi = responseData.nomorRegistrasi || 'N/A'; 
 
-      const doc = new jsPDF({
+          const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: [80, 170], 
+        format: [80, 327],
       });
 
+      const MARGIN_LEFT = 5;
+      const MARGIN_RIGHT = 75;
       doc.setFont("Courier", "normal");
+      doc.setLineHeightFactor(1.2);
+      const HEADER_TOP = 10;
 
-      doc.setFont("Courier", "bold");
       doc.setFontSize(12);
-      doc.text("KLINIK MUHAMMADIYAH LAMONGAN", 40, 10, { align: "center" });
-      
-      doc.setFont("Courier", "normal");
+      doc.text("KLINIK MUHAMMADIYAH LAMONGAN", 40, HEADER_TOP, { align: "center" });
       doc.setFontSize(10);
-      doc.text("(0322) 321056", 40, 15, { align: "center" });
-      doc.line(5, 18, 75, 18);
+      doc.text("(0322) 321056", 40, HEADER_TOP + 5, { align: "center" });
+      doc.line(MARGIN_LEFT, HEADER_TOP + 8, MARGIN_RIGHT, HEADER_TOP + 8);
 
       doc.setFont("Courier", "bold");
       doc.setFontSize(14);
-      doc.text(mode === "bpjs" ? "BPJS" : "UMUM", 5, 25);
-      doc.rect(50, 20, 25, 8); 
-      doc.text(String(nomorAntrian), 62.5, 25.5, { align: "center" });
+      doc.text(mode === "bpjs" ? "BPJS" : "UMUM", MARGIN_LEFT, 25);
+      doc.rect(MARGIN_RIGHT - 20, 20, 15, 8);
+      doc.text(String(nomorAntrian), MARGIN_RIGHT - 12.5, 25.5, { align: "center" });
 
       doc.setFontSize(10);
       doc.text("NO", 5, 32);
@@ -144,63 +145,107 @@ export default function KonfirmasiPendaftaran() {
 
       doc.setFont("Courier", "normal");
       doc.setFontSize(9);
-      
-      let y = 40; 
-      const printRow = (label, value) => {
+
+      let y = 40;
+      const printRow = (label, value, valueBold = false) => {
+        doc.setFont("Courier", "normal");
         doc.text(label, 5, y);
+        if (valueBold) {
+          doc.setFont("Courier", "bold");
+        } else {
+          doc.setFont("Courier", "normal");
+        }
         doc.text(`: ${String(value || '-')}`, 25, y);
-        y += 5;
+        y += 4;
       };
-      
+
       const tanggalSekarang = new Date();
       printRow("REGISTER", pasien.id);
       printRow("TANGGAL", tanggalSekarang.toLocaleDateString("id-ID"));
-      printRow("NAMA", pasien.pxName);
-      
-      doc.text("ALAMAT", 5, y); 
-      const alamat = doc.splitTextToSize(pasien.pxAddress || "-", 48);
+      doc.text("NAMA", 5, y);
       doc.text(":", 25, y);
-      doc.text(alamat, 27, y);
-      y += (alamat.length * 3.5) + 1.5;
+      const nama1 = doc.splitTextToSize(pasien.pxName || "-", 48);
+      doc.text(nama1, 29, y);
+      y += (nama1.length * 4) + 1;
 
-      printRow("ORTU", "-");
+      doc.text("ALAMAT", 5, y);
+      doc.text(":", 25, y);
+      const alamat = doc.splitTextToSize(pasien.pxAddress || "-", 48);
+      doc.text(alamat, 29, y);
+      y += (alamat.length * 4) + 1;
+
+      doc.text("ORTU", 5, y);
+      doc.text(":", 25, y);
+      doc.text("-", 27, y);
+      y += 4;
+
       printRow("JAM", tanggalSekarang.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }));
 
       const tanggalLahir = pasien.pxBirthdate ? new Date(pasien.pxBirthdate).toLocaleDateString("id-ID") : "-";
       const umurDetail = hitungUmurDetail(pasien.pxBirthdate);
-      
+
       doc.text("T. LAHIR", 5, y);
       doc.text(`: ${tanggalLahir}`, 25, y);
-      y += 5;
-      
+      y += 4;
+
       if (pasien.pxBirthdate) {
         doc.text(umurDetail, 27, y);
+        y += 4;
       }
-      y += 6;
 
       printRow("LAYANAN", "Klinik");
       printRow("SPESIALIS", "Umum");
       printRow("DOKTER", dokter.dokterName);
-      
       y += 2;
-      doc.line(5, y, 75, y);
-      y += 5;
+      doc.setFont("Courier", "bold");
+      doc.text("BIAYA KARCIS", 5, y);
+      doc.text("15.000,00", MARGIN_RIGHT - 15, y, { align: "right" });
+      y += 6;
 
-      doc.text("Layanan Tindakan Dan Penunjang Medis", 5, y); y += 5;
-      doc.text("[] TINDAKAN", 5, y); y += 4;
-      doc.text("[] LABORAT", 5, y); y += 4;
-      doc.text("[] RADIOLOGI/USG", 5, y); y += 4;
-      doc.text("[] INSTALASI FARMASI", 5, y); y += 6;
+      y += 2;
+      doc.setFont("Courier", "bold");
+      doc.text("JASA PERIKSA", 5, y);
+      doc.text("15.000,00", MARGIN_RIGHT - 15, y, { align: "right" });
+      y += 6;
+
+      doc.setFont("Courier", "normal");
+      doc.text("Layanan Tindakan Dan Penunjang Medis", MARGIN_LEFT, y); y += 4;
+      doc.text("[ ] TINDAKAN", MARGIN_LEFT, y); y += 4;
+      doc.text("[ ] LABORAT", MARGIN_LEFT, y); y += 4;
+      doc.text("[ ] RADIOLOGI/USG", MARGIN_LEFT, y); y += 4;
+      doc.text("[ ] INSTALASI FARMASI", MARGIN_LEFT, y); y += 6;
 
       printRow("REG", pasien.id);
       printRow("NO", nomorRegistrasi);
       printRow("TGL", tanggalSekarang.toLocaleDateString("id-ID"));
-      printRow("NAMA", pasien.pxName);
-      const pdfBlob = doc.output("bloburl");
-      window.open(pdfBlob, "_blank");
-      doc.save(`struk-pendaftaran-${pasien.id}.pdf`);
+      doc.text("NAMA", 5, y);
+      doc.text(":", 25, y);
+      const nama = doc.splitTextToSize(pasien.pxName || "-", 48);
+      doc.text(nama, 29, y);
+      y += (nama.length * 4) + 1;
+      y += 2;
+      doc.setFont("Courier", "bold");
+      doc.text("BIAYA KARCIS", 5, y);
+      doc.text("15.000,00", MARGIN_RIGHT - 15, y, { align: "right" });
+      y += 19;
 
-      setTimeout(() => navigate("/"), 1000);
+      const blob = doc.output("blob");
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = blobUrl;
+      document.body.appendChild(iframe);
+
+      iframe.onload = function () {
+        setTimeout(() => {
+          iframe.contentWindow.print();
+        }, 600);
+      };
+    
+    setTimeout(() => {
+     navigate("/");
+    }, 3000);
 
     } catch (err) {
       console.error("error", err);
@@ -253,7 +298,7 @@ export default function KonfirmasiPendaftaran() {
   if (!mode) {
     return (
       <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <BackButton onClick={() => navigate(-1)}>Kembali ke Pilih Dokter</BackButton>
+        <BackButton onClick={() => navigate(-1)}>Kembali</BackButton>
         <div style={{
           background: "#fff",
           borderRadius: 18,
@@ -357,7 +402,7 @@ export default function KonfirmasiPendaftaran() {
   if (mode === "umum") {
     return (
       <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <BackButton onClick={handleGoBack}>Pilih Jenis Pasien Lain</BackButton>
+        <BackButton onClick={handleGoBack}>Kembali</BackButton>
         <div
           style={{
             display: "flex", gap: 32, width: "100%", maxWidth: 900,
@@ -399,7 +444,7 @@ export default function KonfirmasiPendaftaran() {
 
   return (
     <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <BackButton onClick={handleGoBack}>Pilih Jenis Pasien Lain</BackButton>
+      <BackButton onClick={handleGoBack}>Kembali</BackButton>
       <div
         style={{
           display: "flex", gap: 32, width: "100%", maxWidth: 900,

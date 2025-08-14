@@ -7,12 +7,14 @@ import BackButton from "../components/BackButton";
 import PasienTable from "../components/PasienTable";
 import RekmedInputGroup from "../components/RekmedInputGroup";
 import withReactContent from "sweetalert2-react-content";
-const MySwal = withReactContent(Swal);
 
+const MySwal = withReactContent(Swal);
 const COLOR_NAME_METHOD = "#2ab36b";
 const COLOR_REKMED_METHOD = "#2276c3";
 const LABEL_JENIS_KELAMIN = { L: "Laki-laki", P: "Perempuan" };
+
 const STEP = {
+  
   CHOOSE_METHOD: 0,
   INPUT_NAME: 1,
   INPUT_REKMED: 2,
@@ -154,6 +156,23 @@ async function handlePilihPasien(pasien) {
     case STEP.CHOOSE_METHOD:
       return (
         <div className="pendaftaran-bg" style={{ minHeight: "100vh" }}>
+          <button
+  onClick={() => nav("/antrian")}
+  style={{
+    position: "absolute",
+    top: 20,
+    right: 20,
+    background: "#e5e7eb",
+    padding: "8px 16px",
+    borderRadius: 8,
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 600,
+  }}
+>
+  Ke Halaman Antrian
+</button>
+
           <img
             className="pendaftaran-logo"
             src="/assets/logo-klinik.png"
@@ -183,7 +202,7 @@ async function handlePilihPasien(pasien) {
               type="text"
               value={namaCari}
               onChange={e => setNamaCari(e.target.value)}
-              placeholder="Masukkan nama anda disini"
+              placeholder="Masukkan nama anda disini (Contoh : Ahmad)"
               className="pendaftaran-input"
               required
               minLength={1}
