@@ -3,7 +3,10 @@ import { getJadwalDokterHarian } from "../api/pendaftaran";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import "../App.css";
+import { User, Hash, Calendar } from "lucide-react";
 
 const MySwal = withReactContent(Swal);
 
@@ -46,6 +49,17 @@ const PilihDokter = () => {
   const location = useLocation();
   const pasien = location.state?.pasien;
 
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out',
+      once: true,
+      offset: 50,
+      delay: 100
+    });
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => setWaktuSekarang(getWaktuSekarang()), 1000);
     return () => clearInterval(timer);
@@ -57,6 +71,7 @@ const PilihDokter = () => {
         const result = await getJadwalDokterHarian();
         if (result.response && Array.isArray(result.response)) {
           setJadwal(result.response);
+          setTimeout(() => AOS.refresh(), 100);
         } else {
           setErrMsg("Data jadwal dokter kosong.");
         }
@@ -98,7 +113,7 @@ const PilihDokter = () => {
   if (!pasien) {
     return (
       <div className="pendaftaran-bg">
-        <div className="box-validasi">
+        <div className="box-validasi" data-aos="fade-up">
           <h2>Data pasien tidak ditemukan</h2>
           <div>Silahkan ulangi proses pendaftaran.</div>
           <button className="pendaftaran-back-btn" onClick={() => navigate("/")}>Kembali</button>
@@ -117,7 +132,7 @@ const PilihDokter = () => {
         boxShadow: "none",
         padding: 0
       }}>
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }} data-aos="fade-down">
           <button
             onClick={handleBatal}
             style={{
@@ -136,62 +151,105 @@ const PilihDokter = () => {
           </button>
         </div>
 
-        <div style={{
-          background: "#f0f9ff",
-          borderRadius: 12,
-          padding: "20px 28px",
-          marginBottom: 24,
-          color: "#1e3a8a",
-          boxShadow: "0 1px 8px #0001",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          width: "560px",
-        }}>
-          <div style={{ fontSize: 20, fontWeight: "bold" }}>Informasi Pasien</div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ width: 150, fontWeight: 600 }}>Nama Pasien</div>
+       <div
+          data-aos="fade-right"
+          data-aos-delay="200"
+          style={{
+            background: "white",
+            borderRadius: 16,
+            padding: "24px 32px",
+            marginBottom: 24,
+            color: "#1e293b",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+            width: "560px",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              marginBottom: 16,
+              color: "#0f172a",
+            }}
+          >
+            🧾 Informasi Pasien
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "160px 1fr",
+              rowGap: 12,
+              columnGap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", fontWeight: 600 }}>
+              <User size={18} style={{ marginRight: 8, color: "#2563eb" }} />
+              Nama Pasien
+            </div>
             <div>: {pasien.pxName}</div>
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ width: 150, fontWeight: 600 }}>No RM</div>
+
+            <div style={{ display: "flex", alignItems: "center", fontWeight: 600 }}>
+              <Hash size={18} style={{ marginRight: 8, color: "#2563eb" }} />
+              No RM
+            </div>
             <div>: {pasien.id}</div>
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ width: 150, fontWeight: 600 }}>Tanggal Lahir</div>
+
+            <div style={{ display: "flex", alignItems: "center", fontWeight: 600 }}>
+              <Calendar size={18} style={{ marginRight: 8, color: "#2563eb" }} />
+              Tanggal Lahir
+            </div>
             <div>: {pasien.pxBirthdate}</div>
           </div>
         </div>
 
-        <h1 className="pendaftaran-title" style={{ fontSize: 28, color: "#2a3450", marginBottom: 6 }}>
+        <h1 
+          className="pendaftaran-title" 
+          style={{ fontSize: 28, color: "#2a3450", marginBottom: 6 }}
+          data-aos="fade-up"
+          data-aos-delay="300"
+        >
           Jadwal Praktek Dokter Klinik Muhammadiyah Lamongan
         </h1>
 
-        <div style={{
-          background: "#2563eb",
-          color: "#fff",
-          fontWeight: 700,
-          borderRadius: 12,
-          padding: "14px 0",
-          textAlign: "center",
-          fontSize: 19,
-          margin: "18px 0 12px 0"
-        }}>
+        <div 
+          style={{
+            background: "#2563eb",
+            color: "#fff",
+            fontWeight: 700,
+            borderRadius: 12,
+            padding: "14px 0",
+            textAlign: "center",
+            fontSize: 19,
+            margin: "18px 0 12px 0"
+          }}
+          data-aos="zoom-in"
+          data-aos-delay="400"
+        >
           Pilih Dokter / Poli Tujuan
         </div>
 
-        <div style={{
-          textAlign: "center",
-          fontSize: 18,
-          fontWeight: 600,
-          marginBottom: 18,
-          color: "#2a3450",
-        }}>
+        <div 
+          style={{
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 600,
+            marginBottom: 18,
+            color: "#2a3450",
+          }}
+          data-aos="fade-up"
+          data-aos-delay="500"
+        >
           Waktu Sekarang: <span style={{ color: "#2563eb" }}>{waktuSekarang}</span>
         </div>
 
-        {loading && <div>Mengambil data jadwal dokter...</div>}
-        {errMsg && <div style={{ color: "red" }}>{errMsg}</div>}
+        {loading && (
+          <div data-aos="fade-in">Mengambil data jadwal dokter...</div>
+        )}
+        {errMsg && (
+          <div style={{ color: "red" }} data-aos="fade-in">{errMsg}</div>
+        )}
         {!loading && !errMsg && (
           <div style={{
             display: "grid",
@@ -201,7 +259,10 @@ const PilihDokter = () => {
             padding: "0 20px 44px 20px",
           }}>
             {jadwal.length === 0 ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#444" }}>
+              <div 
+                style={{ gridColumn: "1/-1", textAlign: "center", color: "#444" }}
+                data-aos="fade-in"
+              >
                 Tidak ada dokter ditemukan.
               </div>
             ) : jadwal.map((j, idx) => {
@@ -220,6 +281,9 @@ const PilihDokter = () => {
                     maxWidth: "100%",
                     minHeight: 440,
                   }}
+                  data-aos="fade-up"
+                  data-aos-delay={idx * 150}
+                  data-aos-anchor-placement="top-bottom"
                 >
                   <img
                     src={j.photo?.startsWith("data:image") ? j.photo : (j.photo ? `data:image/jpeg;base64,${j.photo}` : "/no-foto.png")}
@@ -231,27 +295,45 @@ const PilihDokter = () => {
                       borderRadius: 16,
                       marginBottom: 14
                     }}
+                    data-aos="zoom-in"
+                    data-aos-delay={idx * 150 + 200}
                   />
-                  <div style={{ fontWeight: 800, fontSize: 22, color: "#413096", textAlign: "center", minHeight: 60 }}>
+                  <div 
+                    style={{ fontWeight: 800, fontSize: 22, color: "#413096", textAlign: "center", minHeight: 60 }}
+                    data-aos="fade-up"
+                    data-aos-delay={idx * 150 + 300}
+                  >
                     {j.dokterName}
                   </div>
-                  <div style={{ fontSize: 17, color: "#464646", marginTop: 7 }}>
+                  <div 
+                    style={{ fontSize: 17, color: "#464646", marginTop: 7 }}
+                    data-aos="fade-up"
+                    data-aos-delay={idx * 150 + 400}
+                  >
                     <span style={{ fontWeight: 600 }}>Kode DPJP: {j.dpjp || "-"}</span>
                   </div>
-                  <div style={{
-                    background: "#d6e2ff",
-                    borderRadius: 10,
-                    padding: "13px 0",
-                    fontSize: 19,
-                    color: "#444",
-                    fontWeight: 700,
-                    width: "96%",
-                    margin: "12px 0 24px 0",
-                    textAlign: "center"
-                  }}>
+                  <div 
+                    style={{
+                      background: "#d6e2ff",
+                      borderRadius: 10,
+                      padding: "13px 0",
+                      fontSize: 19,
+                      color: "#444",
+                      fontWeight: 700,
+                      width: "96%",
+                      margin: "12px 0 24px 0",
+                      textAlign: "center"
+                    }}
+                    data-aos="slide-up"
+                    data-aos-delay={idx * 150 + 500}
+                  >
                     {formatJam(j.beginTime)} WIB - {formatJam(j.endTime)} WIB
                   </div>
-                  <div style={{ width: "100%", textAlign: "center" }}>
+                  <div 
+                    style={{ width: "100%", textAlign: "center" }}
+                    data-aos="fade-up"
+                    data-aos-delay={idx * 150 + 600}
+                  >
                    {habis ? (
                      <div style={{
                         padding: "11px 0",

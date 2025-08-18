@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { savePendaftaranApm } from "../api/pendaftaran";
 import BackButton from "../components/BackButton";
-
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const tujuanList = [
   { value: "1", label: "Kunjungan Pertama" },
@@ -78,6 +79,15 @@ export default function KonfirmasiPendaftaran() {
   const [loading, setLoading] = useState(false);
 
   const isBPJSBtnActive = noRujukan.length === 19 && !!tujuan && !loading;
+
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 100,
+    });
+  }, []);
 
   const handleGoBack = () => {
     setMode("");       
@@ -275,7 +285,7 @@ export default function KonfirmasiPendaftaran() {
   if (!pasien || !dokter) {
     return (
       <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="box-validasi">
+        <div className="box-validasi" data-aos="fade-up" data-aos-duration="600">
           <h2>Data tidak lengkap</h2>
           <div>Silahkan ulangi proses pendaftaran.</div>
           <button
@@ -287,6 +297,7 @@ export default function KonfirmasiPendaftaran() {
               boxShadow: "0 1px 6px #0001",
             }}
             onClick={() => navigate("/")}
+            data-aos="zoom-in" data-aos-delay="200"
           >
             Kembali ke Awal
           </button>
@@ -298,7 +309,7 @@ export default function KonfirmasiPendaftaran() {
   if (!mode) {
     return (
       <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <BackButton onClick={() => navigate(-1)}>Kembali</BackButton>
+        <BackButton onClick={() => navigate(-1)} data-aos="fade-right" data-aos-duration="500">Kembali</BackButton>
         <div style={{
           background: "#fff",
           borderRadius: 18,
@@ -312,21 +323,23 @@ export default function KonfirmasiPendaftaran() {
           width: "100%",
           justifyContent: "center",
           marginTop: 40,
-       }}>
+       }} data-aos="fade-up" data-aos-duration="800">
 
   <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-    <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30, textAlign: "center" }}>
+    <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30, textAlign: "center" }} data-aos="fade-down" data-aos-delay="200">
       Silahkan Pilih Jenis Pasien
     </h2>
     <button
       style={{ ...greenBtn, fontSize: 20, marginBottom: 16 }}
       onClick={() => setMode("umum")}
+      data-aos="fade-right" data-aos-delay="400"
     >
       Pasien Umum
     </button>
     <button
       style={{ ...blueBtn, fontSize: 20, marginBottom: 16 }}
       onClick={() => setMode("bpjs")}
+      data-aos="fade-right" data-aos-delay="500"
     >
       Pasien BPJS
     </button>
@@ -341,7 +354,7 @@ export default function KonfirmasiPendaftaran() {
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
-    }}>
+    }} data-aos="fade-left" data-aos-delay="300">
 
   <div>
     <h3 style={{
@@ -351,11 +364,11 @@ export default function KonfirmasiPendaftaran() {
       color: "#2563eb",
       borderBottom: "2px solid #cbd5e1",
       paddingBottom: 8,
-    }}>
+    }} data-aos="fade-down" data-aos-delay="600">
       Informasi Pendaftaran
     </h3>
 
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 16 }} data-aos="fade-up" data-aos-delay="700">
       <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
         Pasien Umum
       </h4>
@@ -364,7 +377,7 @@ export default function KonfirmasiPendaftaran() {
       </p>
     </div>
 
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 16 }} data-aos="fade-up" data-aos-delay="800">
       <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
         Pasien BPJS
       </h4>
@@ -385,7 +398,7 @@ export default function KonfirmasiPendaftaran() {
           display: "flex",
           alignItems: "flex-start",
           gap: 8,
-        }}>
+        }} data-aos="zoom-in" data-aos-delay="900">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" height="20" viewBox="0 0 24 24" width="20" stroke="#10b981">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"/>
     </svg>
@@ -402,17 +415,18 @@ export default function KonfirmasiPendaftaran() {
   if (mode === "umum") {
     return (
       <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <BackButton onClick={handleGoBack}>Kembali</BackButton>
+        <BackButton onClick={handleGoBack} data-aos="fade-right" data-aos-duration="500">Kembali</BackButton>
         <div
           style={{
             display: "flex", gap: 32, width: "100%", maxWidth: 900,
             background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
             padding: "32px 24px", alignItems: "stretch",
           }}
+          data-aos="fade-up" data-aos-duration="800"
         >
-          <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }} data-aos="fade-right" data-aos-delay="200">
             <h2 style={{ fontSize: 21, fontWeight: 700, marginBottom: 18, color: "#3b3b3b" }}>Data Pendaftaran</h2>
-            <table style={{ width: "100%", marginBottom: 20 }}>
+            <table style={{ width: "100%", marginBottom: 20 }} data-aos="fade-up" data-aos-delay="400">
               <tbody>
                 <tr><td><b>Nomor RM</b></td><td>: {pasien.id}</td></tr>
                 <tr><td><b>Nama</b></td><td>: {pasien.pxName}</td></tr>
@@ -420,22 +434,22 @@ export default function KonfirmasiPendaftaran() {
                 <tr><td><b>Jenis Pasien</b></td><td>: Umum</td></tr>
               </tbody>
             </table>
-            <div style={{ fontSize: 13, color: "#64748b" }}>
+            <div style={{ fontSize: 13, color: "#64748b" }} data-aos="fade-up" data-aos-delay="500">
               Pastikan data sudah benar sebelum melanjutkan ke proses berikutnya.
             </div>
           </div>
-          <div style={{ flex: 1.2, minWidth: 280, paddingLeft: 16, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 18, color: "#3856b0", textAlign: "center" }}>
+          <div style={{ flex: 1.2, minWidth: 280, paddingLeft: 16, display: "flex", flexDirection: "column", justifyContent: "center" }} data-aos="fade-left" data-aos-delay="300">
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 18, color: "#3856b0", textAlign: "center" }} data-aos="fade-down" data-aos-delay="400">
               Proses Pendaftaran Pasien Umum
             </h3>
-            <div style={{ fontSize: 15, color: "#373737", marginBottom: 20, textAlign: "center" }}>
+            <div style={{ fontSize: 15, color: "#373737", marginBottom: 20, textAlign: "center" }} data-aos="fade-up" data-aos-delay="500">
               Tekan tombol berikut untuk mencetak struk pendaftaran.<br />
               <b>Struk wajib dibawa  setelah dicetak</b>
             </div>
-            <button onClick={handleCetak} style={{ ...greenBtn, fontSize: 20, width: "100%", maxWidth: 340, margin: "0 auto" }} disabled={loading}>
+            <button onClick={handleCetak} style={{ ...greenBtn, fontSize: 20, width: "100%", maxWidth: 340, margin: "0 auto" }} disabled={loading} data-aos="zoom-in" data-aos-delay="600">
               {loading ? "Memproses..." : "Cetak Struk"}
             </button>
-            {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }}>{error}</div>}
+            {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }} data-aos="shake" data-aos-duration="500">{error}</div>}
           </div>
         </div>
       </div>
@@ -444,17 +458,18 @@ export default function KonfirmasiPendaftaran() {
 
   return (
     <div className="pendaftaran-bg" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <BackButton onClick={handleGoBack}>Kembali</BackButton>
+      <BackButton onClick={handleGoBack} data-aos="fade-right" data-aos-duration="500">Kembali</BackButton>
       <div
         style={{
           display: "flex", gap: 32, width: "100%", maxWidth: 900,
           background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
           padding: "32px 24px", alignItems: "stretch", marginTop : 20
         }}
+        data-aos="fade-up" data-aos-duration="800"
       >
-        <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ flex: 1, minWidth: 260, borderRight: "1.5px solid #e0e7ef", paddingRight: 24, display: "flex", flexDirection: "column", justifyContent: "center" }} data-aos="fade-right" data-aos-delay="200">
           <h2 style={{ fontSize: 21, fontWeight: 700, marginBottom: 18, color: "#3b3b3b" }}>Data Pendaftaran</h2>
-          <table style={{ width: "100%", marginBottom: 20 }}>
+          <table style={{ width: "100%", marginBottom: 20 }} data-aos="fade-up" data-aos-delay="400">
             <tbody>
               <tr><td><b>Nomor RM</b></td><td>: {pasien.id}</td></tr>
               <tr><td><b>Nama</b></td><td>: {pasien.pxName}</td></tr>
@@ -462,15 +477,15 @@ export default function KonfirmasiPendaftaran() {
               <tr><td><b>Jenis Pasien</b></td><td>: BPJS</td></tr>
             </tbody>
           </table>
-          <div style={{ fontSize: 13, color: "#64748b" }}>
+          <div style={{ fontSize: 13, color: "#64748b" }} data-aos="fade-up" data-aos-delay="500">
             Pastikan data sudah benar sebelum melanjutkan ke proses berikutnya.
           </div>
         </div>
-        <div style={{ flex: 1.2, minWidth: 280, paddingLeft: 16, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 13, color: "#3856b0", textAlign: "center" }}>
+        <div style={{ flex: 1.2, minWidth: 280, paddingLeft: 16, display: "flex", flexDirection: "column", justifyContent: "center" }} data-aos="fade-left" data-aos-delay="300">
+          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 13, color: "#3856b0", textAlign: "center" }} data-aos="fade-down" data-aos-delay="400">
             Proses Pendaftaran Pasien BPJS
           </h3>
-          <div style={{ fontSize: 15, color: "#373737", marginBottom: 10, textAlign: "center" }}>
+          <div style={{ fontSize: 15, color: "#373737", marginBottom: 10, textAlign: "center" }} data-aos="fade-up" data-aos-delay="500">
             <b>Scan Barcode Rujukan BPJS</b> Anda atau Input Manual <b>Nomor Rujukan BPJS</b> di bawah ini, kemudian pilih tujuan pendaftaran:
           </div>
           <input
@@ -491,20 +506,21 @@ export default function KonfirmasiPendaftaran() {
             }}
             maxLength={19}
             autoFocus
+            data-aos="zoom-in" data-aos-delay="600"
           />
-          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, textAlign: "center" }}>
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14, textAlign: "center" }} data-aos="fade-up" data-aos-delay="650">
             *Hanya angka/huruf, wajib diisi !
           </div>
           <div style={{
             marginBottom: 20, display: "flex", flexDirection: "column",
             gap: 7, alignItems: "center"
-          }}>
-            {tujuanList.map(jk => (
+          }} data-aos="fade-up" data-aos-delay="700">
+            {tujuanList.map((jk, index) => (
               <label key={jk.value} style={{
                 fontWeight: 500, display: "flex", alignItems: "center",
                 color: noRujukan.length === 19 ? "#2a3450" : "#aaa",
                 fontSize: 15, gap: 8
-              }}>
+              }} data-aos="fade-left" data-aos-delay={750 + index * 100}>
                 <input
                   type="radio" name="tujuan"
                   disabled={noRujukan.length !== 19}
@@ -524,10 +540,11 @@ export default function KonfirmasiPendaftaran() {
               margin: "0 auto", opacity: isBPJSBtnActive ? 1 : 0.7,
               cursor: isBPJSBtnActive ? "pointer" : "not-allowed",
             }}
+            data-aos="zoom-in" data-aos-delay="800"
           >
             {loading ? "Memproses..." : "Cetak Struk"}
           </button>
-          {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }}>{error}</div>}
+          {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }} data-aos="shake" data-aos-duration="500">{error}</div>}
         </div>
       </div>
     </div>
