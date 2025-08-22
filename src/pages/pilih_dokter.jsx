@@ -49,7 +49,6 @@ const PilihDokter = () => {
   const location = useLocation();
   const pasien = location.state?.pasien;
 
-  // Initialize AOS
   useEffect(() => {
     AOS.init({
       duration: 800,

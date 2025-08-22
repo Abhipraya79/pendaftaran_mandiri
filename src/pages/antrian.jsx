@@ -13,19 +13,18 @@ import {
   postNomorAntrianPx,
 } from "../api/pendaftaran";
 import BackButton from "../components/BackButton";
-import { useNavigate } from "react-router-dom"; // Corrected import
+import { useNavigate } from "react-router-dom";
 import { FaUserPlus, FaPrint, FaTicketAlt } from "react-icons/fa";
 
 const MySwal = withReactContent(Swal);
 
-const INSTANSI_NAMA = "KLINIK MUHAMMADIYAH LAMONGAN";
-const INSTANSI_ALAMAT =
-  "Jl. KH. Ahmad Dahlan No.26, Sidorukun, Sidoharjo, Kec. Lamongan";
+//const INSTANSI_NAMA = "KLINIK MUHAMMADIYAH LAMONGAN";
+//const INSTANSI_ALAMAT = "Jl. KH. Ahmad Dahlan No.26, Sidorukun, Sidoharjo, Kec. Lamongan";
 
 export default function Antrian() {
-  const [title, setTitle] = useState(INSTANSI_NAMA);
-  const [alamat, setAlamat] = useState(INSTANSI_ALAMAT);
-  const [tanggal, setTanggal] = useState("");
+  const [title, setTitle] = useState([]);
+  const [alamat, setAlamat] = useState([]);
+  const [tanggal, setTanggal] = useState([]);
   const [jam, setJam] = useState("");
   const [gates, setGates] = useState([]);
   const [selectedGate, setSelectedGate] = useState("");
@@ -43,7 +42,7 @@ export default function Antrian() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Prevent global scroll
+  
     const original = {
       htmlOverflow: document.documentElement.style.overflow,
       bodyOverflow: document.body.style.overflow,
@@ -67,60 +66,69 @@ export default function Antrian() {
   }, []);
 
   useEffect(() => {
-    AOS.init({ duration: 800, easing: "ease-in-out", once: false, mirror: true, offset: 50 });
-    const loadInitialData = async () => {
-      try {
-        const [_, gatesData, timeString] = await Promise.all([
-          getBisnisTitle(),
-          getGates(),
-          getWaktuServer(),
-        ]);
-        setTitle(INSTANSI_NAMA);
-        setAlamat(INSTANSI_ALAMAT);
+  AOS.init({ duration: 800, easing: "ease-in-out", once: false, mirror: true, offset: 50 });
+
+  const loadInitialData = async () => {
+    try {
+      const [titleData, gatesData, timeString] = await Promise.all([
+        getBisnisTitle(),
+        getGates(),
+        getWaktuServer(),
+      ]);
+
+      setTitle(titleData?.nama ??'');
+      setAlamat(titleData?.addr ??'');
+
         if (Array.isArray(gatesData) && gatesData.length > 0) {
-          setGates(gatesData);
-          setSelectedGate(gatesData[0].id);
-        }
-        if (timeString) updateTimeDisplay(timeString);
-      } catch (err) {
-        console.error(err);
-        setErrorMessage("Tidak dapat memuat data dari server.");
-      } finally {
-        setIsLoading(false);
-        setTimeout(() => AOS.refresh(), 100);
+        setGates(gatesData);
+        setSelectedGate(gatesData[0].id);
       }
-    };
-    const updateWaktu = async () => {
-      try {
-        const timeString = await getWaktuServer();
-        if (timeString) updateTimeDisplay(timeString);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    const updateTimeDisplay = (timeString) => {
-      const now = new Date(timeString);
-      setTanggal(
-        now.toLocaleDateString("id-ID", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })
-      );
-      setJam(now.toLocaleTimeString("id-ID", { hour12: false }));
-    };
-    loadInitialData();
-    const interval = setInterval(updateWaktu, 1000);
-    const pulseInterval = setInterval(() => {
-      setPulseTime(true);
-      setTimeout(() => setPulseTime(false), 100);
-    }, 1000);
-    return () => {
-      clearInterval(interval);
-      clearInterval(pulseInterval);
-    };
-  }, []);
+
+      if (timeString) updateTimeDisplay(timeString);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Tidak dapat memuat data dari server.");
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => AOS.refresh(), 100);
+    }
+  };
+
+  const updateWaktu = async () => {
+    try {
+      const timeString = await getWaktuServer();
+      if (timeString) updateTimeDisplay(timeString);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateTimeDisplay = (timeString) => {
+    const now = new Date(timeString);
+    setTanggal(
+      now.toLocaleDateString("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    );
+    setJam(now.toLocaleTimeString("id-ID", { hour12: false }));
+  };
+
+  loadInitialData();
+  const interval = setInterval(updateWaktu, 1000);
+  const pulseInterval = setInterval(() => {
+    setPulseTime(true);
+    setTimeout(() => setPulseTime(false), 100);
+  }, 1000);
+
+  return () => {
+    clearInterval(interval);
+    clearInterval(pulseInterval);
+  };
+}, []);
+
 
   const cetakStrukPDF = (noAntrian) => {
     if (!noAntrian && noAntrian !== 0) return;
@@ -272,19 +280,9 @@ export default function Antrian() {
 
   return (
     <div
-      style={{
-        height: "100vh",
-        width: "100vw",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        padding: 20,
-        background: "#f8fafc",
-        overflow: "hidden",
-      }}
-    >
+          className="pendaftaran-bg"
+          style={{ height: "100vh"}}
+      >
       {gateLocked && (
          <BackButton
             onClick={() => setGateLocked(false)}

@@ -1,13 +1,9 @@
-// src/api/pendaftaran.js (FINAL - DIPERBAIKI)
 import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const USERNAME = import.meta.env.VITE_API_USERNAME;
 const PASSWORD = import.meta.env.VITE_API_PASSWORD;
 
-// =================================================
-// BAGIAN INI TIDAK DIUBAH
-// =================================================
 export const getToken = async () => {
   const url = `${BASE_URL}/api/auth`;
   const response = await axios.get(url, {
@@ -165,7 +161,7 @@ export const savePendaftaranApm = async (payload, token = null, username = null)
 export const getBisnisTitle = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/bisnistitle`);
-    return response.data.response; // ✅ FIX: Menggunakan .response
+    return response.data.response;
   } catch (error) {
     console.error("Error fetching bisnis title:", error);
     throw error;

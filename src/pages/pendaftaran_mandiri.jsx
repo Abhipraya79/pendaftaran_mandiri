@@ -336,7 +336,6 @@ export default function PendaftaranMandiri() {
           {msg && <div style={{ color: "red", marginTop: 12 }}>{msg}</div>}
         </div>
       );
-
     default:
       return null;
   }

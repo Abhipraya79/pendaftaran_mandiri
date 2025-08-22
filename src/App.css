@@ -61,6 +61,19 @@ body, #root {
   margin: 0;
 }
 
+.antrian-bg {
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flexDirection: column;
+        justifyContent: center;
+        alignItems: center;
+        textAlign: center;
+        padding: 20;
+        overflow: hidden;
+        background: linear-gradient(135deg, #e0e7ff 40%, #f0f4f8 100%);
+}
+
 .pendaftaran-logo {
   width: 90px;
   height: 120px;

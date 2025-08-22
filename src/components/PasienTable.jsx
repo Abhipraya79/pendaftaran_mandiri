@@ -219,7 +219,6 @@ export default function PasienTable({ data, onSelect }) {
           </table>
         )}
       </div>
-
       <div
         style={{
           padding: "12px 24px",
