@@ -7,7 +7,10 @@ const PASSWORD = import.meta.env.VITE_API_PASSWORD;
 export const getToken = async () => {
   const url = `${BASE_URL}/api/auth`;
   const response = await axios.get(url, {
-    headers: { "x-username": USERNAME, "x-password": PASSWORD },
+    headers: { 
+      "x-username": USERNAME, 
+      "x-password": PASSWORD 
+    },
   });
   return {
     token: response.data.response.token,
@@ -48,8 +51,6 @@ export const cariPasienByNama = async (nama, token = null, username = null) => {
     throw err.response?.data?.message || "Gagal fetch data pasien";
   }
 };
-
-// ... (fungsi-fungsi lain yang tidak diubah tetap di sini) ...
 
 export const cariPasienByRekmed = async (rekmed, token = null, username = null) => {
   let tokenToUse = token,
@@ -155,6 +156,72 @@ export const savePendaftaranApm = async (payload, token = null, username = null)
       return retry.data;
     }
     throw err.response?.data?.message || "Gagal menyimpan pendaftaran";
+  }
+};
+
+export const getApmToday = async (token = null, username = null) => {
+  let tokenToUse = token,
+    usernameToUse = username;
+  
+  if (!tokenToUse || !usernameToUse) {
+    const t = await getToken();
+    tokenToUse = t.token;
+    usernameToUse = t.username;
+  }
+  
+  const url = `${BASE_URL}/api/apmpx`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        "x-token": tokenToUse,
+        "x-username": usernameToUse,
+        Accept: "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      appointments: response.data.response || [],
+      metadata: response.data.metadata,
+      total: response.data.response ? response.data.response.length : 0
+    };
+    
+  } catch (err) {
+    // Retry jika 401 Unauthorized
+    if (err.response && err.response.status === 401) {
+      try {
+        const t = await getToken();
+        const retry = await axios.get(url, {
+          headers: {
+            "x-token": t.token,
+            "x-username": t.username,
+            Accept: "application/json",
+          },
+        });
+        
+        return {
+          success: true,
+          appointments: retry.data.response || [],
+          metadata: retry.data.metadata,
+          total: retry.data.response ? retry.data.response.length : 0
+        };
+      } catch (retryErr) {
+        console.error('Error on retry:', retryErr);
+        return {
+          success: false,
+          appointments: [],
+          error: retryErr.response?.data?.message || retryErr.message
+        };
+      }
+    }
+    
+    console.error('Error fetching appointments:', err);
+    return {
+      success: false,
+      appointments: [],
+      error: err.response?.data?.message || err.message
+    };
   }
 };
 

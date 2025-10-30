@@ -1,0 +1,48 @@
+{
+  "name": "whatsapp-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp bot & rest api",
+  "main": "app.js",
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Ibnu Hasan A.",
+  "license": "ISC",
+  "dependencies": {
+    "@adiwajshing/keyed-db": "^0.2.4",
+    "@fastify/http-proxy": "^9.5.0",
+    "@fastify/multipart": "^7.1.2",
+    "@fastify/reply-from": "^9.8.0",
+    "@jimp/core": "^0.22.12",
+    "@jimp/custom": "^0.22.12",
+    "@jimp/plugins": "^0.22.12",
+    "@whiskeysockets/baileys": "^6.7.20",
+    "axios": "^1.7.1",
+    "express": "^4.20.0",
+    "fastify": "^4.0.0",
+    "fastify-http-proxy": "^6.3.0",
+    "http-proxy-middleware": "^3.0.2",
+    "ini": "^3.0.1",
+    "link-preview-js": "^3.0.5",
+    "load-bmfont": "^1.4.1",
+    "moment-timezone": "^0.5.45",
+    "mssql": "^11.0.1",
+    "node-cron": "^3.0.3",
+    "phin": "^3.7.1",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.17.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^8.4.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "prettier": "^2.5.1"
+  },
+  "keywords": []
+}

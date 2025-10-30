@@ -90,12 +90,12 @@ export default function KonfirmasiPendaftaran() {
   }, []);
 
   const handleGoBack = () => {
-    setMode("");       
-    setNoRujukan("");  
-    setTujuan("");     
-    setError("");      
+    setMode("");
+    setNoRujukan("");
+    setTujuan("");
+    setError("");
   };
-  
+
   const handleCetak = async () => {
     setLoading(true);
     setError("");
@@ -119,12 +119,13 @@ export default function KonfirmasiPendaftaran() {
 
     try {
       const response = await savePendaftaranApm(payload);
-      
+
       const responseData = response?.response || {};
       const nomorAntrian = responseData.nomorAntrian || 'N/A';
-      const nomorRegistrasi = responseData.nomorRegistrasi || 'N/A'; 
+      const nomorRegistrasi = responseData.nomorRegistrasi || 'N/A';
 
-          const doc = new jsPDF({
+      // ✅ Cetak struk menggunakan jsPDF
+      const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: [80, 327],
@@ -252,10 +253,10 @@ export default function KonfirmasiPendaftaran() {
           iframe.contentWindow.print();
         }, 600);
       };
-    
-    setTimeout(() => {
-     navigate("/");
-    }, 3000);
+
+      setTimeout(() => {
+        navigate("/");
+      }, 3000);
 
     } catch (err) {
       console.error("error", err);
@@ -281,6 +282,10 @@ export default function KonfirmasiPendaftaran() {
       setLoading(false);
     }
   };
+
+  // ✅ UI tetap sama seperti sebelumnya
+  // ... (UI code tidak berubah)
+
 
   if (!pasien || !dokter) {
     return (

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import { cariPasienByNama, cariPasienByRekmed } from "../api/pendaftaran";
 import PilihanCard from "../components/pilihanCard";
 import BackButton from "../components/BackButton";
 import PasienTable from "../components/PasienTable";
 import RekmedInputGroup from "../components/RekmedInputGroup";
-import withReactContent from "sweetalert2-react-content";
-import { FaUsers } from "react-icons/fa";
+import { FaUsers, FaListUl } from "react-icons/fa";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -22,16 +22,36 @@ const STEP = {
   INPUT_REKMED: 2,
 };
 
+// Helper Function
 function hitungUmur(tglLahir) {
   const now = new Date();
   const lahir = new Date(tglLahir);
   let umur = now.getFullYear() - lahir.getFullYear();
   const m = now.getMonth() - lahir.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < lahir.getDate())) {
-    umur--;
-  }
+  if (m < 0 || (m === 0 && now.getDate() < lahir.getDate())) umur--;
   return umur;
 }
+
+// Helper Function (BARU DITAMBAHKAN)
+function getWaktuSekarang() {
+  const now = new Date();
+  const hari = [
+    "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"
+  ][now.getDay()];
+  const bulan = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ][now.getMonth()];
+  const tgl = now.getDate();
+  const th = now.getFullYear();
+  // Format jam agar selalu 2 digit
+  const jam = String(now.getHours()).padStart(2, '0');
+  const menit = String(now.getMinutes()).padStart(2, '0');
+  const detik = String(now.getSeconds()).padStart(2, '0');
+  
+  return `${hari}, ${tgl} ${bulan} ${th} | ${jam}:${menit}:${detik} WIB`;
+}
+
 
 export default function PendaftaranMandiri() {
   const nav = useNavigate();
@@ -41,11 +61,22 @@ export default function PendaftaranMandiri() {
   const [pasienList, setPasienList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  
+  // State untuk jam real-time (BARU DITAMBAHKAN)
+  const [waktuSekarang, setWaktuSekarang] = useState(getWaktuSekarang());
 
-  // Inisialisasi AOS sekali ketika komponen mount
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
   }, []);
+
+  // useEffect untuk jam real-time (BARU DITAMBAHKAN)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWaktuSekarang(getWaktuSekarang());
+    }, 1000);
+    // Cleanup function untuk memberhentikan interval saat komponen dibongkar
+    return () => clearInterval(timer);
+  }, []); // [] berarti efek ini hanya berjalan sekali saat komponen dimuat
 
   const resetAll = () => {
     setNamaCari("");
@@ -61,46 +92,18 @@ export default function PendaftaranMandiri() {
 
   async function handlePilihPasien(pasien) {
     const umur = hitungUmur(pasien.pxBirthdate);
-
     const result = await MySwal.fire({
       title:
         '<span style="font-size: 1.25rem; font-weight: bold;">Konfirmasi Pasien Yang Akan Didaftarkan</span>',
       html: `
-      <div style="text-align: left; font-size: 1rem; line-height: 1.8;">
-        <div style="display: flex; margin-bottom: 8px;">
-          <div style="width: 140px; flex-shrink: 0;"><strong>Nama Pasien</strong></div>
-          <div style="margin-right: 10px;">:</div>
-          <div style="flex: 1; word-break: break-word;">${pasien.pxName}</div>
-        </div>
-        <div style="display: flex; margin-bottom: 8px;">
-          <div style="width: 140px; flex-shrink: 0;"><strong>No RM</strong></div>
-          <div style="margin-right: 10px;">:</div>
-          <div style="flex: 1; word-break: break-word;">${pasien.id}</div>
-        </div>
-        <div style="display: flex; margin-bottom: 8px;">
-          <div style="width: 140px; flex-shrink: 0;"><strong>Alamat</strong></div>
-          <div style="margin-right: 10px;">:</div>
-          <div style="flex: 1; word-break: break-word;">${pasien.pxAddress}</div>
-        </div>
-        <div style="display: flex; margin-bottom: 8px;">
-          <div style="width: 140px; flex-shrink: 0;"><strong>Tanggal Lahir</strong></div>
-          <div style="margin-right: 10px;">:</div>
-          <div style="flex: 1; word-break: break-word;">${pasien.pxBirthdate}</div>
-        </div>
-        <div style="display: flex; margin-bottom: 8px;">
-          <div style="width: 140px; flex-shrink: 0;"><strong>Umur</strong></div>
-          <div style="margin-right: 10px;">:</div>
-          <div style="flex: 1; word-break: break-word;">${umur} tahun</div>
-        </div>
-        <div style="display: flex; margin-bottom: 8px;">
-          <div style="width: 140px; flex-shrink: 0;"><strong>Jenis Kelamin</strong></div>
-          <div style="margin-right: 10px;">:</div>
-          <div style="flex: 1; word-break: break-word;">${
-            LABEL_JENIS_KELAMIN[pasien.pxSex] || pasien.pxSex || "-"
-          }</div>
-        </div>
-      </div>
-    `,
+        <div style="text-align: left; font-size: 1rem; line-height: 1.8;">
+          <div><strong>Nama Pasien:</strong> ${pasien.pxName}</div>
+          <div><strong>No RM:</strong> ${pasien.id}</div>
+          <div><strong>Alamat:</strong> ${pasien.pxAddress}</div>
+          <div><strong>Tanggal Lahir:</strong> ${pasien.pxBirthdate}</div>
+          <div><strong>Umur:</strong> ${umur} tahun</div>
+          <div><strong>Jenis Kelamin:</strong> ${LABEL_JENIS_KELAMIN[pasien.pxSex] || "-"}</div>
+        </div>`,
       icon: "info",
       showCancelButton: true,
       confirmButtonText: "Lanjutkan",
@@ -108,10 +111,7 @@ export default function PendaftaranMandiri() {
       confirmButtonColor: "#10b981",
       cancelButtonColor: "#ef4444",
     });
-
-    if (result.isConfirmed) {
-      nav("/pilih-dokter", { state: { pasien } });
-    }
+    if (result.isConfirmed) nav("/pilih-dokter", { state: { pasien } });
   }
 
   async function submitNama(e) {
@@ -163,49 +163,34 @@ export default function PendaftaranMandiri() {
   switch (step) {
     case STEP.CHOOSE_METHOD:
       return (
-        <div
-          className="pendaftaran-bg"
-          style={{ height: "100vh"}}
-        
-      >
-          <button
-            aria-label="Buka Aplikasi Antrian"
-            onClick={() => nav("/antrian")}
-            style={{
-              position: "absolute",
-              top: 20,
-              right: 20,
-              background: "#2276c3",
-              color: "white",
-              padding: "10px 18px",
-              borderRadius: 12,
-              border: "none",
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: 14,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-              transition: "background 0.3s ease, transform 0.2s ease",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "#0c1ec0ff")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "#2276c3")
-            }
-            onMouseDown={(e) =>
-              (e.currentTarget.style.transform = "scale(0.96)")
-            }
-            onMouseUp={(e) =>
-              (e.currentTarget.style.transform = "scale(1)")
-            }
-            data-aos="zoom-in"
-          >
-            <FaUsers size={16} />
-            Aplikasi Antrian
-          </button>
+        <div className="pendaftaran-bg" style={{ height: "100vh", position: "relative" }}>
+          {/* Top Right Buttons Container */}
+          <div style={styles.topButtonsContainer}>
+            <button
+              className="top-action-button"
+              aria-label="Lihat Daftar Pasien"
+              onClick={() => nav("/PasienList")}
+              style={styles.greenButton}
+              data-aos="fade-down"
+              data-aos-delay="100"
+            >
+              <FaListUl size={18} />
+              <span style={styles.buttonText}>Daftar Pasien</span>
+            </button>
+
+            <button
+              className="top-action-button"
+              aria-label="Buka Aplikasi Antrian"
+              onClick={() => nav("/antrian")}
+              style={styles.blueButton}
+              data-aos="fade-down"
+              data-aos-delay="200"
+            >
+              <FaUsers size={18} />
+              <span style={styles.buttonText}>Aplikasi Antrian</span>
+            </button>
+          </div>
+
           <img
             className="pendaftaran-logo"
             src="/assets/logo-klinik.png"
@@ -213,6 +198,7 @@ export default function PendaftaranMandiri() {
             style={{ marginTop: 32, marginBottom: 16, width: 150 }}
             data-aos="fade-down"
           />
+
           <h1
             className="pendaftaran-title"
             style={{ fontSize: 42, fontWeight: 800 }}
@@ -220,6 +206,18 @@ export default function PendaftaranMandiri() {
           >
             Pendaftaran Mandiri Pasien Klinik Muhammadiyah Lamongan
           </h1>
+
+          {/* === JAM REAL-TIME (BARU DITAMBAHKAN) === */}
+          <div 
+            style={styles.waktuDisplay} 
+            data-aos="fade-up"
+            data-aos-delay="100"
+          >
+            {waktuSekarang}
+          </div>
+          {/* ========================================= */}
+
+
           <div
             className="pendaftaran-instruksi"
             style={{ fontSize: 24, marginBottom: 30 }}
@@ -229,21 +227,29 @@ export default function PendaftaranMandiri() {
             Silakan lanjutkan pendaftaran dengan <b>Nama</b> atau{" "}
             <b>Nomor Rekam Medis</b>
           </div>
+
           <div
-            style={{ display: "flex", justifyContent: "center" }}
+            style={{ display: "flex", justifyContent: "center", gap: 30 }}
             data-aos="zoom-in"
             data-aos-delay="300"
           >
-            <PilihanCard
-              title="Nama"
+            <div 
+              className="method-card"
               onClick={() => setStep(STEP.INPUT_NAME)}
-              color={COLOR_NAME_METHOD}
-            />
-            <PilihanCard
-              title="Nomor Rekam Medis"
+              style={styles.methodCardNM}
+            >
+              <h3 style={styles.methodTitle}>Nama</h3>
+              <p style={styles.methodDesc}>Cari berdasarkan nama pasien</p>
+            </div>
+
+            <div 
+              className="method-card"
               onClick={() => setStep(STEP.INPUT_REKMED)}
-              color={COLOR_REKMED_METHOD}
-            />
+              style={{...styles.methodCardRM, borderColor: COLOR_REKMED_METHOD}}
+            >
+              <h3 style={styles.methodTitle}>Nomor Rekam Medis</h3>
+              <p style={styles.methodDesc}>Cari berdasarkan nomor RM</p>
+            </div>
           </div>
         </div>
       );
@@ -255,17 +261,7 @@ export default function PendaftaranMandiri() {
           <h2 className="pendaftaran-subtitle" data-aos="fade-down">
             Masukkan Nama Anda
           </h2>
-          <form
-            onSubmit={submitNama}
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-            data-aos="zoom-in"
-          >
+          <form onSubmit={submitNama} style={styles.form} data-aos="zoom-in">
             <input
               type="text"
               value={namaCari}
@@ -273,25 +269,30 @@ export default function PendaftaranMandiri() {
               placeholder="Masukkan nama anda disini (Contoh : Ahmad)"
               className="pendaftaran-input"
               required
-              minLength={1}
             />
             <button
               type="submit"
               disabled={loading || namaCari.length < 1}
-              style={{
-                padding: "12px 0",
-                background: "#3b82f6",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                fontSize: "1rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              style={styles.button}
             >
               {loading ? "Mencari..." : "Cari"}
             </button>
           </form>
+          <div style={styles.infoCardGreen} data-aos="fade-up" data-aos-delay="200">
+            <h3 style={{ marginBottom: 8, color: "#059669" }}>
+              💡 Tips Pencarian Nama
+            </h3>
+            <p style={{ margin: 0, color: "#065f46" }}>
+              Masukkan nama lengkap atau sebagian nama Anda pada kolom di atas.
+            </p>
+            <p style={{ margin: "6px 0", color: "#065f46" }}>
+              Contoh: <b>Ahmad</b> atau <b>Siti Badri</b>
+            </p>
+            <p style={{ margin: 0, color: "#065f46" }}>
+              Jika data ditemukan, nama Anda akan muncul pada tabel di bawah.
+            </p>
+          </div>
+
           {msg && <div style={{ color: "red", marginTop: 12 }}>{msg}</div>}
           <PasienTable data={pasienList} onSelect={pilihPasien} />
         </div>
@@ -304,39 +305,208 @@ export default function PendaftaranMandiri() {
           <h2 className="pendaftaran-subtitle" data-aos="fade-down">
             Masukkan Nomor Rekam Medis Anda
           </h2>
-          <form
-            onSubmit={submitRekmed}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 20,
-            }}
-            data-aos="zoom-in"
-          >
+          <form onSubmit={submitRekmed} style={styles.formCenter} data-aos="zoom-in">
             <RekmedInputGroup values={rekmedParts} onChange={setRekmedParts} />
             <button
               type="submit"
               disabled={loading || rekmedParts.some((rm) => rm.length !== 2)}
-              style={{
-                padding: "12px 0",
-                background: "#3b82f6",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                fontSize: "1rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                width: 180,
-              }}
+              style={styles.buttonCari}
             >
               {loading ? "Mencari..." : "Cari"}
             </button>
           </form>
+
+          {/* Card informasi rekam medis */}
+          <div style={styles.infoCard} data-aos="fade-up" data-aos-delay="200">
+            <h3 style={{ marginBottom: 8, color: "#1e40af" }}>
+              📘 Informasi Nomor Rekam Medis
+            </h3>
+            <p style={{ margin: 0 }}>
+              Nomor Rekam Medis terdiri dari <b>3 bagian</b> dengan format:
+            </p>
+            <p style={{ margin: "6px 0" }}>
+              <code style={styles.codeBox}>XX . XX . XX</code>
+            </p>
+            <p style={{ margin: 0 }}>
+              Contoh: <b>01.23.45</b> → masukkan masing-masing <b>2 digit</b>{" "}
+              pada setiap kolom.
+            </p>
+          </div>
+
           {msg && <div style={{ color: "red", marginTop: 12 }}>{msg}</div>}
         </div>
       );
+
     default:
       return null;
   }
 }
+
+const styles = {
+  topButtonsContainer: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    zIndex: 1000,
+    alignItems: "flex-end",
+  },
+  greenButton: {
+    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    border: "none",
+    borderRadius: 10,
+    padding: "12px 20px",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    cursor: "pointer",
+    boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)",
+    transition: "all 0.2s ease",
+    color: "white",
+    fontWeight: 600,
+    fontSize: 14,
+  },
+  blueButton: {
+    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+    border: "none",
+    borderRadius: 10,
+    padding: "12px 20px",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    cursor: "pointer",
+    boxShadow: "0 2px 8px rgba(59, 130, 246, 0.25)",
+    transition: "all 0.2s ease",
+    color: "white",
+    fontWeight: 600,
+    fontSize: 14,
+  },
+  buttonText: {
+    whiteSpace: "nowrap",
+  },
+  // Style untuk jam (BARU DITAMBAHKAN)
+  waktuDisplay: {
+    fontSize: "2.25rem", // 36px
+    fontWeight: 700,
+    color: "#ffffff", // Warna putih
+    textShadow: "0 2px 4px rgba(0, 0, 0, 0.25)", // Bayangan teks agar terbaca
+    marginTop: 8,
+    marginBottom: 24,
+    padding: "8px 24px",
+    backgroundColor: "rgba(0, 0, 0, 0.1)", // Latar semi-transparan
+    borderRadius: 12,
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    letterSpacing: "0.5px"
+  },
+  methodCardNM: {
+    width: 280,
+    minHeight: 240,
+    background: "#2ab36b",
+    borderRadius: 16,
+    padding: "32px 24px",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    border: `3px solid ${COLOR_NAME_METHOD}`,
+    transition: "all 0.2s ease",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  methodCardRM: {
+    width: 280,
+    minHeight: 240,
+    background: "#2276c3",
+    borderRadius: 16,
+    padding: "32px 24px",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    border: `3px solid ${COLOR_NAME_METHOD}`,
+    transition: "all 0.2s ease",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  methodIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+    transition: "transform 0.2s ease",
+  },
+  methodTitle: {
+    fontSize: 22,
+    fontWeight: 700,
+    color: "#e0e0e0ff",
+    margin: "0 0 12px 0",
+  },
+  methodDesc: {
+    fontSize: 14,
+    color: "#ffffffff",
+    margin: 0,
+    lineHeight: 1.6,
+  },
+  form: {
+    width: "100%",
+    maxWidth: 420,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  formCenter: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 20,
+  },
+  button: {
+    padding: "12px 0",
+    background: "#3b82f6",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: "1rem",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  buttonCari: {
+    marginTop: 8,
+    width: 120,
+    padding: "10px 0",
+    background: "#3b82f6",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    fontSize: "1rem",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  infoCard: {
+    marginTop: 24,
+    backgroundColor: "#e0e7ff",
+    borderRadius: 10,
+    padding: "16px 20px",
+    width: "fit-content",
+    textAlign: "center",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  },
+  infoCardGreen: {
+    marginTop: 24,
+    backgroundColor: "#d1fae5",
+    borderRadius: 10,
+    padding: "16px 20px",
+    width: "fit-content",
+    textAlign: "center",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  },
+  codeBox: {
+    background: "#1e40af",
+    color: "white",
+    padding: "2px 6px",
+    borderRadius: 4,
+    fontWeight: 600,
+  },
+};

@@ -3,6 +3,7 @@ import PendaftaranMandiri from "./pages/pendaftaran_mandiri.jsx";
 import PilihDokter from "./pages/pilih_dokter";
 import KonfirmasiPendaftaran from './pages/konfirmasi_pendaftaran';
 import Antrian from "./pages/antrian";
+import PasienList from "./pages/PasienList.jsx"
 import './App.css';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/pilih-dokter" element={<PilihDokter />} />
         <Route path="/konfirmasi-pendaftaran" element={<KonfirmasiPendaftaran />} />
         <Route path="/antrian" element={<Antrian />} />
+        <Route path="/PasienList" element={<PasienList />} />
       </Routes>
     </Router>
   );
