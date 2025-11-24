@@ -98,6 +98,9 @@ const PilihDokter = () => {
     if (result.isConfirmed) navigate("/");
   };
 
+  // Hitung jumlah dokter yang sedang praktek
+  const dokterPraktek = jadwal.filter(j => !isHabis(j.beginTime, j.endTime)).length;
+
   if (!pasien) {
     return (
       <div className="pendaftaran-bg">
@@ -113,62 +116,117 @@ const PilihDokter = () => {
   return (
     <div className="pendaftaran-bg" style={{ minHeight:"100vh", alignItems:"start", paddingTop:32 }}>
       <div className="box-validasi" style={{ width:"100%", maxWidth:1200, margin:"0 auto", background:"transparent", boxShadow:"none", padding:0 }}>
+        
+        <div style={{ display:"flex", justifyContent:"center", alignItems:"stretch", gap:16, marginBottom:24 }}>
+          
+          <div data-aos="fade-right">
+            <button
+              onClick={handleBatal}
+              style={{
+                background:"linear-gradient(135deg,#ef4444,#b91c1c)",
+                color:"#fff",
+                border:"none",
+                borderRadius:16,
+                padding:"0 24px",
+                height:"100%",
+                minHeight:"165px",
+                fontWeight:700,
+                fontSize:16,
+                cursor:"pointer",
+                boxShadow:"0 4px 16px rgba(239,68,68,0.3)",
+                transition:"all 0.2s",
+                display:"flex",
+                alignItems:"center",
+                justifyContent:"center",
+                whiteSpace:"nowrap"
+              }}
+              onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
+              onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
+            >
+              Batalkan Pendaftaran
+            </button>
+          </div>
 
-        {/* BUTTON BATAL (IMPROVISED) */}
-        <div style={{ marginBottom:16 }} data-aos="fade-down">
-          <button
-            onClick={handleBatal}
+          {!loading && !errMsg && (
+            <div 
+              data-aos="fade-up"
+              data-aos-delay="150"
+              style={{
+                background:"white",
+                borderRadius:16,
+                overflow:"hidden",
+                minWidth:"320px",
+                border:"1px solid #e2e8f0",
+                boxShadow:"0 4px 20px rgba(0,0,0,0.06)",
+                display:"flex",
+                flexDirection:"column"
+              }}
+            >
+              <div style={{ background:"linear-gradient(135deg, #22c55e, #16a34a)", color:"#fff", fontWeight:700, padding:"14px 20px", fontSize:20 }}>
+                📊 Dokter Praktek Hari Ini
+              </div>
+              
+              <div style={{ 
+                padding:"24px 26px", 
+                display:"flex", 
+                flexDirection:"column", 
+                justifyContent:"center",
+                alignItems:"center",
+                flex:1,
+                background:"linear-gradient(to bottom, #f0fdf4, #dcfce7)"
+              }}>
+                <div style={{ fontSize:15, fontWeight:600, color:"#166534", marginBottom:8 }}>
+                  Dokter Sedang Praktek
+                </div>
+                <div style={{ fontSize:52, fontWeight:800, lineHeight:1, color:"#15803d", marginBottom:8 }}>
+                  {dokterPraktek}
+                </div>
+                <div style={{ fontSize:16, fontWeight:600, color:"#166534" }}>
+                  Dokter
+                </div>
+                <div style={{ fontSize:13, fontWeight:500, color:"#16a34a", marginTop:8, textAlign:"center" }}>
+                  Siap melayani Anda hari ini
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div
+            data-aos="fade-left"
+            data-aos-delay="300"
             style={{
-              background:"linear-gradient(90deg,#ef4444,#b91c1c)",
-              color:"#fff",
-              border:"none",
-              borderRadius:10,
-              padding:"10px 32px",
-              fontWeight:700,
-              fontSize:16,
-              cursor:"pointer",
-              boxShadow:"0 4px 12px rgba(0,0,0,0.15)",
-              transition:"0.2s",
+              background:"white",
+              borderRadius:16,
+              overflow:"hidden",
+              minWidth:"420px",
+              border:"1px solid #e2e8f0",
+              boxShadow:"0 4px 20px rgba(0,0,0,0.06)",
+              display:"flex",
+              flexDirection:"column"
             }}
           >
-            Batalkan Pendaftaran
-          </button>
-        </div>
+            <div style={{ background:"#2563eb", color:"#fff", fontWeight:700, padding:"14px 20px", fontSize:20 }}>
+              🧾 Informasi Pasien
+            </div>
 
-        {/* INFORMASI PASIEN (IMPROVISED) */}
-        <div
-          data-aos="fade-right"
-          data-aos-delay="200"
-          style={{
-            background:"white",
-            borderRadius:16,
-            overflow:"hidden",
-            marginBottom:24,
-            width:"560px",
-            border:"1px solid #e2e8f0",
-            boxShadow:"0 4px 20px rgba(0,0,0,0.06)"
-          }}
-        >
-          <div style={{ background:"#2563eb", color:"#fff", fontWeight:700, padding:"14px 20px", fontSize:20 }}>
-            🧾 Informasi Pasien
+            <div style={{ padding:"18px 26px", display:"grid", gridTemplateColumns:"160px 1fr", rowGap:12, columnGap:8, flex:1, alignContent:"center" }}>
+              <div style={{ display:"flex", alignItems:"center", fontWeight:600 }}>
+                <User size={18} style={{ marginRight:8, color:"#2563eb" }}/> Nama Pasien
+              </div>
+              <div>: {pasien.pxName}</div>
+
+              <div style={{ display:"flex", alignItems:"center", fontWeight:600 }}>
+                <Hash size={18} style={{ marginRight:8, color:"#2563eb" }}/> No RM
+              </div>
+              <div>: {pasien.id}</div>
+
+              <div style={{ display:"flex", alignItems:"center", fontWeight:600 }}>
+                <Calendar size={18} style={{ marginRight:8, color:"#2563eb" }}/> Tanggal Lahir
+              </div>
+              <div>: {pasien.pxBirthdate}</div>
+            </div>
           </div>
 
-          <div style={{ padding:"18px 26px", display:"grid", gridTemplateColumns:"160px 1fr", rowGap:12, columnGap:8 }}>
-            <div style={{ display:"flex", alignItems:"center", fontWeight:600 }}>
-              <User size={18} style={{ marginRight:8, color:"#2563eb" }}/> Nama Pasien
-            </div>
-            <div>: {pasien.pxName}</div>
-
-            <div style={{ display:"flex", alignItems:"center", fontWeight:600 }}>
-              <Hash size={18} style={{ marginRight:8, color:"#2563eb" }}/> No RM
-            </div>
-            <div>: {pasien.id}</div>
-
-            <div style={{ display:"flex", alignItems:"center", fontWeight:600 }}>
-              <Calendar size={18} style={{ marginRight:8, color:"#2563eb" }}/> Tanggal Lahir
-            </div>
-            <div>: {pasien.pxBirthdate}</div>
-          </div>
         </div>
 
         {/* ======================= MULAI DARI SINI TIDAK ADA PERUBAHAN ======================= */}

@@ -7,7 +7,7 @@ import PilihanCard from "../components/pilihanCard";
 import BackButton from "../components/BackButton";
 import PasienTable from "../components/PasienTable";
 import RekmedInputGroup from "../components/RekmedInputGroup";
-import { FaUsers, FaListUl } from "react-icons/fa";
+import { FaUsers, FaListUl, FaClock, FaCalendarAlt } from "react-icons/fa";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -32,7 +32,7 @@ function hitungUmur(tglLahir) {
   return umur;
 }
 
-// Helper Function (BARU DITAMBAHKAN)
+// Helper Function untuk format waktu yang lebih terstruktur
 function getWaktuSekarang() {
   const now = new Date();
   const hari = [
@@ -44,12 +44,14 @@ function getWaktuSekarang() {
   ][now.getMonth()];
   const tgl = now.getDate();
   const th = now.getFullYear();
-  // Format jam agar selalu 2 digit
   const jam = String(now.getHours()).padStart(2, '0');
   const menit = String(now.getMinutes()).padStart(2, '0');
   const detik = String(now.getSeconds()).padStart(2, '0');
   
-  return `${hari}, ${tgl} ${bulan} ${th} | ${jam}:${menit}:${detik} WIB`;
+  return {
+    tanggal: `${hari}, ${tgl} ${bulan} ${th}`,
+    waktu: `${jam}:${menit}:${detik}`
+  };
 }
 
 
@@ -61,22 +63,18 @@ export default function PendaftaranMandiri() {
   const [pasienList, setPasienList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
-  
-  // State untuk jam real-time (BARU DITAMBAHKAN)
   const [waktuSekarang, setWaktuSekarang] = useState(getWaktuSekarang());
 
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
   }, []);
 
-  // useEffect untuk jam real-time (BARU DITAMBAHKAN)
   useEffect(() => {
     const timer = setInterval(() => {
       setWaktuSekarang(getWaktuSekarang());
     }, 1000);
-    // Cleanup function untuk memberhentikan interval saat komponen dibongkar
     return () => clearInterval(timer);
-  }, []); // [] berarti efek ini hanya berjalan sekali saat komponen dimuat
+  }, []);
 
   const resetAll = () => {
     setNamaCari("");
@@ -173,6 +171,8 @@ export default function PendaftaranMandiri() {
               style={styles.greenButton}
               data-aos="fade-down"
               data-aos-delay="100"
+              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
             >
               <FaListUl size={18} />
               <span style={styles.buttonText}>Daftar Pasien</span>
@@ -185,6 +185,8 @@ export default function PendaftaranMandiri() {
               style={styles.blueButton}
               data-aos="fade-down"
               data-aos-delay="200"
+              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
             >
               <FaUsers size={18} />
               <span style={styles.buttonText}>Aplikasi Antrian</span>
@@ -201,26 +203,43 @@ export default function PendaftaranMandiri() {
 
           <h1
             className="pendaftaran-title"
-            style={{ fontSize: 42, fontWeight: 800 }}
+            style={{ fontSize: 42, fontWeight: 800, color: "#1f2937" }}
             data-aos="fade-up"
           >
             Pendaftaran Mandiri Pasien Klinik Muhammadiyah Lamongan
           </h1>
 
-          {/* === JAM REAL-TIME (BARU DITAMBAHKAN) === */}
+          {/* === JAM REAL-TIME === */}
           <div 
-            style={styles.waktuDisplay} 
+            style={styles.waktuContainer} 
             data-aos="fade-up"
             data-aos-delay="100"
           >
-            {waktuSekarang}
+            <div style={styles.waktuCard}>
+              <div style={styles.waktuSection}>
+                <FaCalendarAlt style={styles.waktuIcon} />
+                <div style={styles.waktuText}>
+                  <div style={styles.waktuLabel}>Tanggal</div>
+                  <div style={styles.waktuValue}>{waktuSekarang.tanggal}</div>
+                </div>
+              </div>
+              
+              <div style={styles.waktuDivider}></div>
+              
+              <div style={styles.waktuSection}>
+                <FaClock style={styles.waktuIcon} />
+                <div style={styles.waktuText}>
+                  <div style={styles.waktuLabel}>Waktu</div>
+                  <div style={styles.waktuValueLarge}>{waktuSekarang.waktu} <span style={styles.wibText}>WIB</span></div>
+                </div>
+              </div>
+            </div>
           </div>
           {/* ========================================= */}
 
-
           <div
             className="pendaftaran-instruksi"
-            style={{ fontSize: 24, marginBottom: 30 }}
+            style={{ fontSize: 24, marginBottom: 30, marginTop: 24, color: "#374151" }}
             data-aos="fade-up"
             data-aos-delay="200"
           >
@@ -237,6 +256,14 @@ export default function PendaftaranMandiri() {
               className="method-card"
               onClick={() => setStep(STEP.INPUT_NAME)}
               style={styles.methodCardNM}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-8px)";
+                e.currentTarget.style.boxShadow = "0 12px 24px rgba(42, 179, 107, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
+              }}
             >
               <h3 style={styles.methodTitle}>Nama</h3>
               <p style={styles.methodDesc}>Cari berdasarkan nama pasien</p>
@@ -246,6 +273,14 @@ export default function PendaftaranMandiri() {
               className="method-card"
               onClick={() => setStep(STEP.INPUT_REKMED)}
               style={{...styles.methodCardRM, borderColor: COLOR_REKMED_METHOD}}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-8px)";
+                e.currentTarget.style.boxShadow = "0 12px 24px rgba(34, 118, 195, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
+              }}
             >
               <h3 style={styles.methodTitle}>Nomor Rekam Medis</h3>
               <p style={styles.methodDesc}>Cari berdasarkan nomor RM</p>
@@ -258,7 +293,7 @@ export default function PendaftaranMandiri() {
       return (
         <div className="pendaftaran-bg" data-aos="fade-right">
           <BackButton onClick={goBack} />
-          <h2 className="pendaftaran-subtitle" data-aos="fade-down">
+          <h2 className="pendaftaran-subtitle" style={{ color: "#1f2937" }} data-aos="fade-down">
             Masukkan Nama Anda
           </h2>
           <form onSubmit={submitNama} style={styles.form} data-aos="zoom-in">
@@ -268,12 +303,27 @@ export default function PendaftaranMandiri() {
               onChange={(e) => setNamaCari(e.target.value)}
               placeholder="Masukkan nama anda disini (Contoh : Ahmad)"
               className="pendaftaran-input"
+              style={styles.input}
               required
             />
             <button
               type="submit"
               disabled={loading || namaCari.length < 1}
-              style={styles.button}
+              style={{
+                ...styles.button,
+                opacity: loading || namaCari.length < 1 ? 0.6 : 1,
+                cursor: loading || namaCari.length < 1 ? "not-allowed" : "pointer"
+              }}
+              onMouseEnter={(e) => {
+                if (!loading && namaCari.length >= 1) {
+                  e.currentTarget.style.transform = "scale(1.02)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.4)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
               {loading ? "Mencari..." : "Cari"}
             </button>
@@ -293,7 +343,7 @@ export default function PendaftaranMandiri() {
             </p>
           </div>
 
-          {msg && <div style={{ color: "red", marginTop: 12 }}>{msg}</div>}
+          {msg && <div style={styles.errorMsg}>{msg}</div>}
           <PasienTable data={pasienList} onSelect={pilihPasien} />
         </div>
       );
@@ -302,7 +352,7 @@ export default function PendaftaranMandiri() {
       return (
         <div className="pendaftaran-bg" data-aos="fade-left">
           <BackButton onClick={goBack} />
-          <h2 className="pendaftaran-subtitle" data-aos="fade-down">
+          <h2 className="pendaftaran-subtitle" style={{ color: "#1f2937" }} data-aos="fade-down">
             Masukkan Nomor Rekam Medis Anda
           </h2>
           <form onSubmit={submitRekmed} style={styles.formCenter} data-aos="zoom-in">
@@ -310,30 +360,43 @@ export default function PendaftaranMandiri() {
             <button
               type="submit"
               disabled={loading || rekmedParts.some((rm) => rm.length !== 2)}
-              style={styles.buttonCari}
+              style={{
+                ...styles.buttonCari,
+                opacity: loading || rekmedParts.some((rm) => rm.length !== 2) ? 0.6 : 1,
+                cursor: loading || rekmedParts.some((rm) => rm.length !== 2) ? "not-allowed" : "pointer"
+              }}
+              onMouseEnter={(e) => {
+                if (!loading && !rekmedParts.some((rm) => rm.length !== 2)) {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.4)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
               {loading ? "Mencari..." : "Cari"}
             </button>
           </form>
 
-          {/* Card informasi rekam medis */}
           <div style={styles.infoCard} data-aos="fade-up" data-aos-delay="200">
             <h3 style={{ marginBottom: 8, color: "#1e40af" }}>
               📘 Informasi Nomor Rekam Medis
             </h3>
-            <p style={{ margin: 0 }}>
+            <p style={{ margin: 0, color: "#1e3a8a" }}>
               Nomor Rekam Medis terdiri dari <b>3 bagian</b> dengan format:
             </p>
             <p style={{ margin: "6px 0" }}>
               <code style={styles.codeBox}>XX . XX . XX</code>
             </p>
-            <p style={{ margin: 0 }}>
+            <p style={{ margin: 0, color: "#1e3a8a" }}>
               Contoh: <b>01.23.45</b> → masukkan masing-masing <b>2 digit</b>{" "}
               pada setiap kolom.
             </p>
           </div>
 
-          {msg && <div style={{ color: "red", marginTop: 12 }}>{msg}</div>}
+          {msg && <div style={styles.errorMsg}>{msg}</div>}
         </div>
       );
 
@@ -363,7 +426,7 @@ const styles = {
     gap: 10,
     cursor: "pointer",
     boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)",
-    transition: "all 0.2s ease",
+    transition: "all 0.3s ease",
     color: "white",
     fontWeight: 600,
     fontSize: 14,
@@ -378,7 +441,7 @@ const styles = {
     gap: 10,
     cursor: "pointer",
     boxShadow: "0 2px 8px rgba(59, 130, 246, 0.25)",
-    transition: "all 0.2s ease",
+    transition: "all 0.3s ease",
     color: "white",
     fontWeight: 600,
     fontSize: 14,
@@ -386,30 +449,78 @@ const styles = {
   buttonText: {
     whiteSpace: "nowrap",
   },
-  // Style untuk jam (BARU DITAMBAHKAN)
-  waktuDisplay: {
-    fontSize: "2.25rem", // 36px
+  waktuContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  waktuCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(10px)",
+    borderRadius: 16,
+    padding: "20px 32px",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+  },
+  waktuSection: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
+  waktuIcon: {
+    fontSize: 28,
+    color: "#3b82f6",
+  },
+  waktuText: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  waktuLabel: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  waktuValue: {
+    fontSize: 16,
     fontWeight: 700,
-    color: "#ffffff", // Warna putih
-    textShadow: "0 2px 4px rgba(0, 0, 0, 0.25)", // Bayangan teks agar terbaca
-    marginTop: 8,
-    marginBottom: 24,
-    padding: "8px 24px",
-    backgroundColor: "rgba(0, 0, 0, 0.1)", // Latar semi-transparan
-    borderRadius: 12,
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    letterSpacing: "0.5px"
+    color: "#1f2937",
+    letterSpacing: "0.3px",
+  },
+  waktuValueLarge: {
+    fontSize: 24,
+    fontWeight: 800,
+    color: "#1f2937",
+    letterSpacing: "1px",
+    fontFamily: "'Courier New', monospace",
+  },
+  wibText: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#6b7280",
+    marginLeft: 4,
+  },
+  waktuDivider: {
+    width: 1,
+    height: 50,
+    backgroundColor: "#e5e7eb",
   },
   methodCardNM: {
     width: 280,
     minHeight: 240,
-    background: "#2ab36b",
+    background: "linear-gradient(135deg, #2ab36b 0%, #059669 100%)",
     borderRadius: 16,
     padding: "32px 24px",
     cursor: "pointer",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     border: `3px solid ${COLOR_NAME_METHOD}`,
-    transition: "all 0.2s ease",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -419,33 +530,29 @@ const styles = {
   methodCardRM: {
     width: 280,
     minHeight: 240,
-    background: "#2276c3",
+    background: "linear-gradient(135deg, #2276c3 0%, #1e40af 100%)",
     borderRadius: 16,
     padding: "32px 24px",
     cursor: "pointer",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-    border: `3px solid ${COLOR_NAME_METHOD}`,
-    transition: "all 0.2s ease",
+    border: `3px solid ${COLOR_REKMED_METHOD}`,
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     textAlign: "center",
   },
-  methodIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-    transition: "transform 0.2s ease",
-  },
   methodTitle: {
     fontSize: 22,
     fontWeight: 700,
-    color: "#e0e0e0ff",
+    color: "#ffffff",
     margin: "0 0 12px 0",
+    textShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
   },
   methodDesc: {
     fontSize: 14,
-    color: "#ffffffff",
+    color: "#f0f9ff",
     margin: 0,
     lineHeight: 1.6,
   },
@@ -462,27 +569,32 @@ const styles = {
     alignItems: "center",
     gap: 20,
   },
+  input: {
+    transition: "all 0.2s ease",
+  },
   button: {
     padding: "12px 0",
-    background: "#3b82f6",
+    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
     color: "#fff",
     border: "none",
     borderRadius: 8,
     fontSize: "1rem",
     fontWeight: 600,
     cursor: "pointer",
+    transition: "all 0.2s ease",
   },
   buttonCari: {
     marginTop: 8,
     width: 120,
     padding: "10px 0",
-    background: "#3b82f6",
+    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
     color: "#fff",
     border: "none",
     borderRadius: 10,
     fontSize: "1rem",
     fontWeight: 600,
     cursor: "pointer",
+    transition: "all 0.2s ease",
   },
   infoCard: {
     marginTop: 24,
@@ -492,6 +604,7 @@ const styles = {
     width: "fit-content",
     textAlign: "center",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    border: "1px solid #c7d2fe",
   },
   infoCardGreen: {
     marginTop: 24,
@@ -501,12 +614,23 @@ const styles = {
     width: "fit-content",
     textAlign: "center",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    border: "1px solid #6ee7b7",
   },
   codeBox: {
     background: "#1e40af",
     color: "white",
-    padding: "2px 6px",
+    padding: "4px 8px",
     borderRadius: 4,
     fontWeight: 600,
+    fontSize: "0.95rem",
+  },
+  errorMsg: {
+    color: "#dc2626",
+    marginTop: 12,
+    padding: "10px 16px",
+    backgroundColor: "#fee2e2",
+    borderRadius: 8,
+    border: "1px solid #1d1b1bff",
+    fontWeight: 500,
   },
 };

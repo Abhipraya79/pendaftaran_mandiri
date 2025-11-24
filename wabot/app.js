@@ -1,4 +1,4 @@
-import { bot } from "./bot.js";
+import { bot } from "./server.js";
 import { lookup } from "mime-types";
 import { basename } from "path";
 import fastify from "fastify";

@@ -2,9 +2,24 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { savePendaftaranApm } from "../api/pendaftaran";
+import { sendWaMessage } from "../api/pendaftaran";
 import BackButton from "../components/BackButton";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+
+const getPhoneFromPasien = (pasienObj) => {
+  if (!pasienObj) return null;
+  return pasienObj.pxPhone || pasienObj.pxPhoneNumber || pasienObj.phoneNumber || pasienObj.pxTelp || pasienObj.pxMobile || null;
+};
+
+const normalizePhone = (raw) => {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0")) return "62" + digits.slice(1);
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("+")) return digits.replace("+", "");
+  return digits;
+};
 
 const tujuanList = [
   { value: "1", label: "Kunjungan Pertama" },
@@ -34,6 +49,24 @@ function hitungUmurDetail(tanggalLahir) {
 
   return `(${tahun} th, ${bulan} bln, ${hari} hr)`;
 }
+
+// Fungsi untuk mendapatkan nomor antrian global berikutnya
+const getNextGlobalQueueNumber = () => {
+  const today = new Date().toDateString();
+  const storedDate = localStorage.getItem('queueDate');
+  
+  // Reset counter jika hari berbeda
+  if (storedDate !== today) {
+    localStorage.setItem('queueDate', today);
+    localStorage.setItem('globalQueueCounter', '0');
+  }
+  
+  const currentCounter = parseInt(localStorage.getItem('globalQueueCounter') || '0', 10);
+  const nextCounter = currentCounter + 1;
+  localStorage.setItem('globalQueueCounter', nextCounter.toString());
+  
+  return nextCounter;
+};
 
 const greenBtn = {
   background: "#22c55e",
@@ -68,7 +101,9 @@ const blueBtn = {
 export default function KonfirmasiPendaftaran() {
   const { state } = useLocation();
   const navigate = useNavigate();
-
+  
+  const [waStatus, setWaStatus] = useState(null);
+  const [waMessage, setWaMessage] = useState("");
   const pasien = state?.pasien;
   const dokter = state?.dokter;
 
@@ -99,12 +134,18 @@ export default function KonfirmasiPendaftaran() {
   const handleCetak = async () => {
     setLoading(true);
     setError("");
+    setWaStatus(null);
+    setWaMessage("");
 
     if (!pasien?.id || !dokter?.id || !dokter?.jamPraktek) {
       setError("Data pasien atau dokter tidak lengkap. Harap ulangi proses.");
       setLoading(false);
       return;
     }
+
+    // Dapatkan nomor antrian global SEBELUM memanggil API
+    const nomorAntrianGlobal = getNextGlobalQueueNumber();
+    console.log("🎫 Nomor Antrian Global yang dihasilkan:", nomorAntrianGlobal);
 
     const payload = {
       request: {
@@ -117,14 +158,41 @@ export default function KonfirmasiPendaftaran() {
       },
     };
 
+    console.log("📤 Payload yang dikirim ke backend:", payload);
+
     try {
       const response = await savePendaftaranApm(payload);
+      console.log("🔍 Full Response dari savePendaftaranApm:", response);
 
-      const responseData = response?.response || {};
-      const nomorAntrian = responseData.nomorAntrian || 'N/A';
-      const nomorRegistrasi = responseData.nomorRegistrasi || 'N/A';
+      const idApm = response?.id;
+      
+      if (!idApm) {
+        console.error("❌ Response structure:", response);
+        throw new Error("ID APM tidak ditemukan di response!");
+      }
 
-      // ✅ Cetak struk menggunakan jsPDF
+      console.log("✅ APM ID berhasil didapat:", idApm);
+      const responseData = response?.responseData;
+      console.log("📝 Response Data:", responseData);
+
+      // Gunakan nomor registrasi dari response
+      let nomorRegistrasi = idApm;
+
+      if (typeof responseData === "object" && responseData !== null) {
+        nomorRegistrasi = responseData.id || responseData.apmId || responseData.registrationId || idApm;
+        console.log("✅ Nomor Registrasi:", nomorRegistrasi);
+      } else if (typeof responseData === "string") {
+        const matchReg = responseData.match(/(?:No\.\s*ID|Registration|ID|Nomor\s*Registrasi)\s*[\t:]+\s*([0-9]+)/i);
+        nomorRegistrasi = matchReg ? matchReg[1] : idApm;
+      }
+
+      console.log("🎫 ===== FINAL RESULT =====");
+      console.log("🎫 Nomor Antrian Global (Frontend):", nomorAntrianGlobal);
+      console.log("🆔 Nomor Registrasi:", nomorRegistrasi);
+      console.log("👤 Jenis Pasien:", mode === "bpjs" ? "BPJS" : "UMUM");
+      console.log("🎯 Tujuan Kunjungan (jnsKun):", mode === "bpjs" ? tujuan : "0 (UMUM)");
+      console.log("=========================");
+
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -146,8 +214,9 @@ export default function KonfirmasiPendaftaran() {
       doc.setFont("Courier", "bold");
       doc.setFontSize(14);
       doc.text(mode === "bpjs" ? "BPJS" : "UMUM", MARGIN_LEFT, 25);
+      
       doc.rect(MARGIN_RIGHT - 20, 20, 15, 8);
-      doc.text(String(nomorAntrian), MARGIN_RIGHT - 12.5, 25.5, { align: "center" });
+      doc.text(String(nomorAntrianGlobal), MARGIN_RIGHT - 12.5, 25.5, { align: "center" });
 
       doc.setFontSize(10);
       doc.text("NO", 5, 32);
@@ -166,7 +235,7 @@ export default function KonfirmasiPendaftaran() {
         } else {
           doc.setFont("Courier", "normal");
         }
-        doc.text(`: ${String(value || '-')}`, 25, y);
+        doc.text(`: ${String(value || "-")}`, 25, y);
         y += 4;
       };
 
@@ -207,6 +276,12 @@ export default function KonfirmasiPendaftaran() {
       printRow("LAYANAN", "Klinik");
       printRow("SPESIALIS", "Umum");
       printRow("DOKTER", dokter.dokterName);
+      
+      if (mode === "bpjs" && tujuan) {
+        const tujuanLabel = tujuanList.find(t => t.value === tujuan)?.label || "-";
+        printRow("TUJUAN", tujuanLabel);
+      }
+      
       y += 2;
       doc.setFont("Courier", "bold");
       doc.text("BIAYA KARCIS", 5, y);
@@ -254,6 +329,33 @@ export default function KonfirmasiPendaftaran() {
         }, 600);
       };
 
+      const phoneRaw = getPhoneFromPasien(pasien);
+      const normalizedPhone = normalizePhone(phoneRaw);
+
+      if (!normalizedPhone) {
+        setWaStatus("failed");
+        setWaMessage("Nomor telepon pasien tidak tersedia. Notifikasi WA tidak dikirim.");
+        console.warn("Nomor telepon pasien tidak ditemukan, skip WA.");
+      } else {
+        setWaStatus("sending");
+        try {
+          console.log("📱 Mengirim WA dengan ID:", idApm);
+          const waResult = await sendWaMessage(idApm);
+          if (waResult?.success) {
+            setWaStatus("success");
+            setWaMessage("Notifikasi WhatsApp terkirim ke pasien.");
+          } else {
+            setWaStatus("failed");
+            setWaMessage(waResult?.error || "Gagal mengirim notifikasi WhatsApp.");
+            console.warn("sendWaMessage result:", waResult);
+          }
+        } catch (waErr) {
+          setWaStatus("failed");
+          setWaMessage(waErr?.message || "Gagal saat mengirim WA.");
+          console.error("Error saat memanggil sendWaMessage:", waErr);
+        }
+      }
+
       setTimeout(() => {
         navigate("/");
       }, 3000);
@@ -282,10 +384,6 @@ export default function KonfirmasiPendaftaran() {
       setLoading(false);
     }
   };
-
-  // ✅ UI tetap sama seperti sebelumnya
-  // ... (UI code tidak berubah)
-
 
   if (!pasien || !dokter) {
     return (
@@ -328,91 +426,91 @@ export default function KonfirmasiPendaftaran() {
           width: "100%",
           justifyContent: "center",
           marginTop: 40,
-       }} data-aos="fade-up" data-aos-duration="800">
+        }} data-aos="fade-up" data-aos-duration="800">
 
-  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-    <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30, textAlign: "center" }} data-aos="fade-down" data-aos-delay="200">
-      Silahkan Pilih Jenis Pasien
-    </h2>
-    <button
-      style={{ ...greenBtn, fontSize: 20, marginBottom: 16 }}
-      onClick={() => setMode("umum")}
-      data-aos="fade-right" data-aos-delay="400"
-    >
-      Pasien Umum
-    </button>
-    <button
-      style={{ ...blueBtn, fontSize: 20, marginBottom: 16 }}
-      onClick={() => setMode("bpjs")}
-      data-aos="fade-right" data-aos-delay="500"
-    >
-      Pasien BPJS
-    </button>
-  </div>
- 
-    <div style={{
-      flex: 1,
-      background: "#f9fafb",
-      border: "1px solid #d0d0d0ff",
-      borderRadius: 12,
-      padding: "24px 24px",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-    }} data-aos="fade-left" data-aos-delay="300">
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 30, textAlign: "center" }} data-aos="fade-down" data-aos-delay="200">
+              Silahkan Pilih Jenis Pasien
+            </h2>
+            <button
+              style={{ ...greenBtn, fontSize: 20, marginBottom: 16 }}
+              onClick={() => setMode("umum")}
+              data-aos="fade-right" data-aos-delay="400"
+            >
+              Pasien Umum
+            </button>
+            <button
+              style={{ ...blueBtn, fontSize: 20, marginBottom: 16 }}
+              onClick={() => setMode("bpjs")}
+              data-aos="fade-right" data-aos-delay="500"
+            >
+              Pasien BPJS
+            </button>
+          </div>
+        
+          <div style={{
+            flex: 1,
+            background: "#f9fafb",
+            border: "1px solid #d0d0d0ff",
+            borderRadius: 12,
+            padding: "24px 24px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }} data-aos="fade-left" data-aos-delay="300">
 
-  <div>
-    <h3 style={{
-      marginBottom: 14,
-      fontSize: 20,
-      fontWeight: 700,
-      color: "#2563eb",
-      borderBottom: "2px solid #cbd5e1",
-      paddingBottom: 8,
-    }} data-aos="fade-down" data-aos-delay="600">
-      Informasi Pendaftaran
-    </h3>
+            <div>
+              <h3 style={{
+                marginBottom: 14,
+                fontSize: 20,
+                fontWeight: 700,
+                color: "#2563eb",
+                borderBottom: "2px solid #cbd5e1",
+                paddingBottom: 8,
+              }} data-aos="fade-down" data-aos-delay="600">
+                Informasi Pendaftaran
+              </h3>
 
-    <div style={{ marginBottom: 16 }} data-aos="fade-up" data-aos-delay="700">
-      <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
-        Pasien Umum
-      </h4>
-      <p style={{ margin: 0, fontSize: 14, color: "#475569", lineHeight: 1.5 }}>
-        Pasien Umum tidak memerlukan rujukan dan biaya pelayanan ditanggung secara pribadi. 
-      </p>
-    </div>
+              <div style={{ marginBottom: 16 }} data-aos="fade-up" data-aos-delay="700">
+                <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
+                  Pasien Umum
+                </h4>
+                <p style={{ margin: 0, fontSize: 14, color: "#475569", lineHeight: 1.5 }}>
+                  Pasien Umum tidak memerlukan rujukan dan biaya pelayanan ditanggung secara pribadi. Nomor antrian urut global.
+                </p>
+              </div>
 
-    <div style={{ marginBottom: 16 }} data-aos="fade-up" data-aos-delay="800">
-      <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
-        Pasien BPJS
-      </h4>
-      <p style={{ margin: 0, fontSize: 14, color: "#475569", lineHeight: 1.5 }}>
-        Wajib membawa <strong>nomor rujukan aktif</strong> dari faskes 1 atau rumah sakit rujukan. Juga diwajibkan memilih tujuan pendaftaran.
-      </p>
-    </div>
-  </div>
+              <div style={{ marginBottom: 16 }} data-aos="fade-up" data-aos-delay="800">
+                <h4 style={{ fontSize: 16, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
+                  Pasien BPJS
+                </h4>
+                <p style={{ margin: 0, fontSize: 14, color: "#475569", lineHeight: 1.5 }}>
+                  Wajib membawa <strong>nomor rujukan aktif</strong> dari faskes 1 atau rumah sakit rujukan. Juga diwajibkan memilih tujuan pendaftaran. Nomor antrian urut global.
+                </p>
+              </div>
+            </div>
 
-        <div style={{
-          background: "#ecfdf5",
-          border: "1px solid #34d399",
-          padding: 14,
-          borderRadius: 8,
-          color: "#065f46",
-          fontSize: 14,
-          fontWeight: 500,
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 8,
-        }} data-aos="zoom-in" data-aos-delay="900">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" height="20" viewBox="0 0 24 24" width="20" stroke="#10b981">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"/>
-    </svg>
-    <span>
-      Pilih jenis pasien sesuai dengan hak pelayanan Anda untuk menghindari kendala pada proses pemeriksaan atau penagihan.
-    </span>
-  </div>
-</div>
-</div>
+            <div style={{
+              background: "#ecfdf5",
+              border: "1px solid #34d399",
+              padding: 14,
+              borderRadius: 8,
+              color: "#065f46",
+              fontSize: 14,
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8,
+            }} data-aos="zoom-in" data-aos-delay="900">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" height="20" viewBox="0 0 24 24" width="20" stroke="#10b981">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"/>
+              </svg>
+              <span>
+                <strong>Nomor antrian urut global:</strong> Semua pasien (UMUM & BPJS) mendapat nomor antrian berurutan tanpa memandang jenis pasien atau tujuan kunjungan.
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -449,12 +547,15 @@ export default function KonfirmasiPendaftaran() {
             </h3>
             <div style={{ fontSize: 15, color: "#373737", marginBottom: 20, textAlign: "center" }} data-aos="fade-up" data-aos-delay="500">
               Tekan tombol berikut untuk mencetak struk pendaftaran.<br />
-              <b>Struk wajib dibawa  setelah dicetak</b>
+              <b>Struk wajib dibawa setelah dicetak</b>
             </div>
             <button onClick={handleCetak} style={{ ...greenBtn, fontSize: 20, width: "100%", maxWidth: 340, margin: "0 auto" }} disabled={loading} data-aos="zoom-in" data-aos-delay="600">
               {loading ? "Memproses..." : "Cetak Struk"}
             </button>
             {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }} data-aos="shake" data-aos-duration="500">{error}</div>}
+            {waStatus === "sending" && <div style={{ color: "#2563eb", marginTop: 10, textAlign: "center", fontWeight: 500 }}>📱 Mengirim notifikasi WhatsApp...</div>}
+            {waStatus === "success" && <div style={{ color: "#22c55e", marginTop: 10, textAlign: "center", fontWeight: 500 }}>✅ {waMessage}</div>}
+            {waStatus === "failed" && <div style={{ color: "#f59e0b", marginTop: 10, textAlign: "center", fontWeight: 500 }}>⚠️ {waMessage}</div>}
           </div>
         </div>
       </div>
@@ -468,7 +569,7 @@ export default function KonfirmasiPendaftaran() {
         style={{
           display: "flex", gap: 32, width: "100%", maxWidth: 900,
           background: "#fff", borderRadius: 18, boxShadow: "0 2px 16px #0002",
-          padding: "32px 24px", alignItems: "stretch", marginTop : 20
+          padding: "32px 24px", alignItems: "stretch", marginTop: 20
         }}
         data-aos="fade-up" data-aos-duration="800"
       >
@@ -550,6 +651,9 @@ export default function KonfirmasiPendaftaran() {
             {loading ? "Memproses..." : "Cetak Struk"}
           </button>
           {error && <div style={{ color: "#b91c1c", marginTop: 10, textAlign: "center", fontWeight: 500, background: "#fee2e2", padding: "8px", borderRadius: "8px", border: "1px solid #fecaca" }} data-aos="shake" data-aos-duration="500">{error}</div>}
+          {waStatus === "sending" && <div style={{ color: "#2563eb", marginTop: 10, textAlign: "center", fontWeight: 500 }}>📱 Mengirim notifikasi WhatsApp...</div>}
+          {waStatus === "success" && <div style={{ color: "#22c55e", marginTop: 10, textAlign: "center", fontWeight: 500 }}>✅ {waMessage}</div>}
+          {waStatus === "failed" && <div style={{ color: "#f59e0b", marginTop: 10, textAlign: "center", fontWeight: 500 }}>⚠️ {waMessage}</div>}
         </div>
       </div>
     </div>
